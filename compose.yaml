@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=moviesdb'
+      - 'POSTGRES_PASSWORD=pass'
+      - 'POSTGRES_USER=user'
+    ports:
+      - '5432'
+
+  movies-api:
+    build: .
+    ports:
+      - '8080:8080'
+    depends_on:
+      - postgres
+
