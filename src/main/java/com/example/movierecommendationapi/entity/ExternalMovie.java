@@ -1,4 +1,4 @@
-package com.example.movierecommendationapi.model;
+package com.example.movierecommendationapi.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

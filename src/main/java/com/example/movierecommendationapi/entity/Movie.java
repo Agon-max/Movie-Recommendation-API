@@ -1,4 +1,4 @@
-package com.example.movierecommendationapi.model;
+package com.example.movierecommendationapi.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -34,5 +34,11 @@ public class Movie {
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
     private List<Rating> ratings;
+
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
+    private List<WatchHistory> watchHistory;
+
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
+    private List<Review> reviews;
 
 }

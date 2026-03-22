@@ -1,4 +1,4 @@
-package com.example.movierecommendationapi.model;
+package com.example.movierecommendationapi.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -23,6 +23,8 @@ public class User {
     private String email;
     private String password; // Store securely (hashed)
 
+    private int totalPoints;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Rating> ratings;
 
@@ -33,4 +35,16 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "movie_id")
     )
     private List<Movie> favoriteMovies;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<WatchHistory> watchHistory;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Review> reviews;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<PointTransaction> pointTransactions;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Redemption> redemptions;
 }
