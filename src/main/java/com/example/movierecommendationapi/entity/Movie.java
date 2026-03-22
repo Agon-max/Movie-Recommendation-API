@@ -33,9 +33,6 @@ public class Movie {
     private List<User> favoritedBy;
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
-    private List<Rating> ratings;
-
-    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
     private List<WatchHistory> watchHistory;
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)

@@ -31,6 +31,8 @@ public class Review {
     @JoinColumn(name = "movie_id", nullable = false)
     private Movie movie;
 
+    private int score;
+
     private String title;
 
     @Column(columnDefinition = "TEXT")
