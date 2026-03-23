@@ -25,9 +25,6 @@ public class  User {
 
     private int totalPoints;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Rating> ratings;
-
     @ManyToMany
     @JoinTable(
             name = "user_favorites",

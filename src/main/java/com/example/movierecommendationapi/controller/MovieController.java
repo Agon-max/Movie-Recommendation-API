@@ -1,7 +1,9 @@
 package com.example.movierecommendationapi.controller;
 
 import com.example.movierecommendationapi.dto.MovieDto;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -12,13 +14,15 @@ import java.util.List;
 @RequestMapping("/api/movies")
 public class MovieController{
 
-    @GetMapping
-    public List<MovieDto> searchMovies(){
-
-        var movie = new MovieDto();
-        List<MovieDto> movies = new ArrayList<MovieDto>();
-
-        movies.add(movie);
-        return movies;
+    @GetMapping("/")
+    @Operation(summary = "First Spring Boot API testing")
+    public String home() {
+        return "API running";
     }
+
+   @PostMapping
+   @Operation(summary = "Create a new movie")
+    public MovieDto saveMovie(MovieDto movieDto){
+       return null;
+   }
 }
