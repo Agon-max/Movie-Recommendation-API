@@ -9,19 +9,19 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Entity
-@Table(name = "genre")
+@Table(name = "actors")
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
-public class Genre {
+@NoArgsConstructor
+public class Actor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String title;
-    @ManyToMany(mappedBy = "genres")
+    private String name;
+
+    @ManyToMany(mappedBy = "actors")
     private List<Movie> movies = new ArrayList<>();
 }

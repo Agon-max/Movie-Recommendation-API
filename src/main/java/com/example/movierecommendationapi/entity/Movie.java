@@ -22,11 +22,32 @@ public class Movie {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long tmdbId;
+
     private String title;
-    private String description;
-    private List<String> directors;
+
+    private String language;
+
+    @Column(length = 2000)
+    private String overview;
+
+    @ManyToMany
+    @JoinTable(
+            name = "movie_directors",
+            joinColumns = @JoinColumn(name = "movie_id"),
+            inverseJoinColumns = @JoinColumn(name = "director_id")
+    )
+    private List<Director> directors = new ArrayList<>();
+
     private LocalDateTime releaseDate;
-    private List<String> actors;
+
+    @ManyToMany
+    @JoinTable(
+            name = "movie_actors",
+            joinColumns = @JoinColumn(name = "movie_id"),
+            inverseJoinColumns = @JoinColumn(name = "actor_id")
+    )
+    private List<Actor> actors = new ArrayList<>();
 
     @ManyToMany
     @JoinTable(
@@ -39,12 +60,12 @@ public class Movie {
     private Double averageRating;
 
     @ManyToMany(mappedBy = "favoriteMovies")
-    private List<User> favoritedBy;
+    private List<User> favoritedBy = new ArrayList();
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
-    private List<WatchHistory> watchHistory;
+    private List<WatchHistory> watchHistory = new ArrayList();
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
-    private List<Review> reviews;
+    private List<Review> reviews = new ArrayList();
 
 }

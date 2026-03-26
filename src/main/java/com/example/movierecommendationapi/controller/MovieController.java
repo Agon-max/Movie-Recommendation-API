@@ -1,11 +1,9 @@
 package com.example.movierecommendationapi.controller;
 
 import com.example.movierecommendationapi.dto.MovieDto;
+import com.example.movierecommendationapi.service.MovieService;
 import io.swagger.v3.oas.annotations.Operation;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +11,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/movies")
 public class MovieController{
+
+    private final MovieService movieService;
+
+    public MovieController(MovieService movieService) {
+        this.movieService = movieService;
+    }
 
     @GetMapping("/")
     @Operation(summary = "First Spring Boot API testing")
@@ -25,4 +29,9 @@ public class MovieController{
     public MovieDto saveMovie(MovieDto movieDto){
        return null;
    }
+
+    @PostMapping("/import")
+    public void importMovies() {
+        movieService.importMovies();
+    }
 }

@@ -6,5 +6,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/external/movies")
-public class ExternalMovieController {
+public class TMDBController {
+
 }
