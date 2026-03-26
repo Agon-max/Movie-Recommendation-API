@@ -24,16 +24,17 @@ public class MovieDto {
 
     @NotEmpty
     @Size(max = 255)
-    private List<@NotNull String> director;
+    private List<@NotNull DirectorDto> director;
 
     @NotNull
     private LocalDateTime releaseDate;
 
     @NotEmpty
-    private List<@NotBlank String> actors;
+    private List<@NotBlank ActorDto> actors;
 
     @DecimalMin("0.0")
     @DecimalMax("10.0")
+
     private Double averageRating;
 
 }

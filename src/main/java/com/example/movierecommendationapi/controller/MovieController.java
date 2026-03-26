@@ -2,7 +2,9 @@ package com.example.movierecommendationapi.controller;
 
 import com.example.movierecommendationapi.dto.MovieDto;
 import com.example.movierecommendationapi.service.MovieService;
+import com.example.movierecommendationapi.service.TMDBService;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -13,18 +15,14 @@ import java.util.List;
 public class MovieController{
 
     private final MovieService movieService;
+    private final TMDBService tmdbService;
 
-    public MovieController(MovieService movieService) {
+    public MovieController(MovieService movieService, TMDBService tmdbService) {
         this.movieService = movieService;
+        this.tmdbService = tmdbService;
     }
 
-    @GetMapping("/")
-    @Operation(summary = "First Spring Boot API testing")
-    public String home() {
-        return "API running";
-    }
-
-   @PostMapping
+   @PostMapping @ResponseStatus(HttpStatus.CREATED)
    @Operation(summary = "Create a new movie")
     public MovieDto saveMovie(MovieDto movieDto){
        return null;
@@ -34,4 +32,5 @@ public class MovieController{
     public void importMovies() {
         movieService.importMovies();
     }
+
 }

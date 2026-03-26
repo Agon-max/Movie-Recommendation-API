@@ -1,6 +1,7 @@
 package com.example.movierecommendationapi.service;
 
 import com.example.movierecommendationapi.dto.MovieDto;
+import com.example.movierecommendationapi.dto.TMDBGenreDto;
 import com.example.movierecommendationapi.dto.TmdbMovieDto;
 import com.example.movierecommendationapi.dto.TmdbResponseDto;
 import com.example.movierecommendationapi.entity.Genre;
@@ -8,6 +9,12 @@ import com.example.movierecommendationapi.entity.Movie;
 import com.example.movierecommendationapi.mapper.MovieMapper;
 import com.example.movierecommendationapi.repository.MovieRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class MovieService {
@@ -26,20 +33,39 @@ public class MovieService {
         return movieMapper.toDto(savedMovie);
     }
 
+    public boolean movieExists(Long id) {
+        return movieRepository.existsById(id);
+    }
+
     public void importMovies() {
 
         TmdbResponseDto response = tmdbService.getPopularMovies();
 
+        Map<Long, Genre> genreMap = tmdbService.getGenres()
+                .stream()
+                .collect(Collectors.toMap(TMDBGenreDto::getId,
+                        g -> new Genre(g.getId(), g.getTitle())));
+
         for (TmdbMovieDto dto : response.getResults()) {
 
+            if (movieRepository.existsById(dto.getId()))
+                continue;
+
             Movie movie = new Movie();
-            Genre genre = new Genre();
+
+            List<Genre> genres = dto.getGenre_ids()
+                    .stream()
+                    .map(genreMap::get)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
 
             movie.setTitle(dto.getTitle());
-
             movie.setOverview(dto.getOverview());
+            movie.setGenres(genres);
 
             movieRepository.save(movie);
         }
     }
+
+
 }

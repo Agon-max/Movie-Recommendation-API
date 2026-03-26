@@ -24,4 +24,9 @@ public class Genre {
     private String title;
     @ManyToMany(mappedBy = "genres")
     private List<Movie> movies = new ArrayList<>();
+
+    public Genre(Long id, String title) {
+            this.id = id;
+            this.title = title;
+    }
 }
