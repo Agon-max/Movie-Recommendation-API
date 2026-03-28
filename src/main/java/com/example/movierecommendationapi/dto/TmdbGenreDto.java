@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TMDBGenreDto {
+public class TmdbGenreDto {
     private Long id;
     private String title;
 }

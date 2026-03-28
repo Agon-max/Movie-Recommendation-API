@@ -6,7 +6,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class TmdbResponseDto {
+public class TmdbMovieResponseDto {
     public Integer page;
     private List<TmdbMovieDto> results;
     private Integer total_pages;

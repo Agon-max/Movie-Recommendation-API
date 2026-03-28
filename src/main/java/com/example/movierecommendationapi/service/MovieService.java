@@ -1,16 +1,15 @@
 package com.example.movierecommendationapi.service;
 
 import com.example.movierecommendationapi.dto.MovieDto;
-import com.example.movierecommendationapi.dto.TMDBGenreDto;
+import com.example.movierecommendationapi.dto.TmdbGenreDto;
 import com.example.movierecommendationapi.dto.TmdbMovieDto;
-import com.example.movierecommendationapi.dto.TmdbResponseDto;
+import com.example.movierecommendationapi.dto.TmdbMovieResponseDto;
 import com.example.movierecommendationapi.entity.Genre;
 import com.example.movierecommendationapi.entity.Movie;
 import com.example.movierecommendationapi.mapper.MovieMapper;
 import com.example.movierecommendationapi.repository.MovieRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,9 +19,9 @@ import java.util.stream.Collectors;
 public class MovieService {
     private final MovieRepository movieRepository;
     private final MovieMapper movieMapper;
-    private final TMDBService tmdbService;
+    private final TmdbService tmdbService;
 
-    public MovieService(MovieRepository movieRepository, MovieMapper movieMapper, TMDBService tmdbService) {
+    public MovieService(MovieRepository movieRepository, MovieMapper movieMapper, TmdbService tmdbService) {
         this.movieRepository = movieRepository;
         this.movieMapper = movieMapper;
         this.tmdbService = tmdbService;
@@ -39,11 +38,11 @@ public class MovieService {
 
     public void importMovies() {
 
-        TmdbResponseDto response = tmdbService.getPopularMovies();
+        TmdbMovieResponseDto response = tmdbService.getPopularMovies();
 
         Map<Long, Genre> genreMap = tmdbService.getGenres()
                 .stream()
-                .collect(Collectors.toMap(TMDBGenreDto::getId,
+                .collect(Collectors.toMap(TmdbGenreDto::getId,
                         g -> new Genre(g.getId(), g.getTitle())));
 
         for (TmdbMovieDto dto : response.getResults()) {

@@ -7,6 +7,6 @@ import java.util.List;
 
 @Getter
 @Setter
-public class TMDBGenreResponseDto {
-    private List<TMDBGenreDto> genres;
+public class TmdbGenreResponseDto {
+    private List<TmdbGenreDto> genres;
 }

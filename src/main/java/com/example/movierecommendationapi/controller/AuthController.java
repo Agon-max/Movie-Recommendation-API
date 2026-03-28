@@ -6,7 +6,7 @@ import com.example.movierecommendationapi.dto.RegisterRequest;
 import com.example.movierecommendationapi.dto.UserDto;
 import com.example.movierecommendationapi.entity.User;
 import com.example.movierecommendationapi.mapper.UserMapper;
-import com.example.movierecommendationapi.security.AuthService;
+import com.example.movierecommendationapi.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;

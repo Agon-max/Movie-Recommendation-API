@@ -1,9 +1,10 @@
-package com.example.movierecommendationapi.security;
+package com.example.movierecommendationapi.service;
 
 import com.example.movierecommendationapi.dto.LoginRequest;
 import com.example.movierecommendationapi.dto.LoginResponse;
 import com.example.movierecommendationapi.entity.User;
 import com.example.movierecommendationapi.repository.UserRepository;
+import com.example.movierecommendationapi.security.JwtTokenProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
