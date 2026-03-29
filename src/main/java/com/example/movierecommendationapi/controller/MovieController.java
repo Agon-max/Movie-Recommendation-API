@@ -25,9 +25,13 @@ public class MovieController{
        return null;
    }
 
-    @PostMapping("/import/movies")
-    public void importMovies() {
-        movieService.importMovies();
-    }
+//    @PostMapping("/import/movies")
+//    public void importMovies() {
+//        movieService.importMovies();
+//    }
+
+//    @GetMapping("/{id}")
+//    public MovieDto getMovieById(@PathVariable Long id){
+//    }
 
 }

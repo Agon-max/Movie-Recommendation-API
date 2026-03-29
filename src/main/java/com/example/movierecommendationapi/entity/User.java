@@ -44,4 +44,7 @@ public class  User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Redemption> redemptions;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Wallet> wallets;
 }
