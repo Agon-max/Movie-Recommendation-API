@@ -11,7 +11,7 @@ services:
   movies-api:
     build: .
     ports:
-      - "8081:8080"
+      - "8081:9090"
     depends_on:
       - postgres
     environment:
