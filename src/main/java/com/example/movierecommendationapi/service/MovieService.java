@@ -10,9 +10,7 @@ import com.example.movierecommendationapi.mapper.MovieMapper;
 import com.example.movierecommendationapi.repository.MovieRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,35 +34,35 @@ public class MovieService {
         return movieRepository.existsById(id);
     }
 
-    public void importMovies() {
-
-        TmdbMovieResponseDto response = tmdbService.getPopularMovies();
-
-        Map<Long, Genre> genreMap = tmdbService.getGenres()
-                .stream()
-                .collect(Collectors.toMap(TmdbGenreDto::getId,
-                        g -> new Genre(g.getId(), g.getTitle())));
-
-        for (TmdbMovieDto dto : response.getResults()) {
-
-            if (movieRepository.existsById(dto.getId()))
-                continue;
-
-            Movie movie = new Movie();
-
-            List<Genre> genres = dto.getGenre_ids()
-                    .stream()
-                    .map(genreMap::get)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-
-            movie.setTitle(dto.getTitle());
-            movie.setOverview(dto.getOverview());
-            movie.setGenres(genres);
-
-            movieRepository.save(movie);
-        }
-    }
+//    public void importMovies() {
+//
+//        TmdbMovieResponseDto response = tmdbService.getPopularMovies();
+//
+//        Map<Long, Genre> genreMap = tmdbService.getGenres()
+//                .stream()
+//                .collect(Collectors.toMap(TmdbGenreDto::getId,
+//                        g -> new Genre(g.getId(), g.getTitle())));
+//
+//        for (TmdbMovieDto dto : response.getResults()) {
+//
+//            if (movieRepository.existsById(dto.getId()))
+//                continue;
+//
+//            Movie movie = new Movie();
+//
+//            List<Genre> genres = dto.getGenre_ids()
+//                    .stream()
+//                    .map(genreMap::get)
+//                    .filter(Objects::nonNull)
+//                    .collect(Collectors.toList());
+//
+//            movie.setTitle(dto.getTitle());
+//            movie.setOverview(dto.getOverview());
+//            movie.setGenres(genres);
+//
+//            movieRepository.save(movie);
+//        }
+//    }
 
 
 }
