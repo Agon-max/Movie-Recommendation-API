@@ -6,6 +6,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +38,36 @@ public class GlobalExceptionHandler {
                 400,
                 ex.getMessage(),
                 errors
+        );
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleConflict(HttpServletRequest request, IllegalArgumentException ex){
+        return new ErrorResponse(
+                409,
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(InternalError.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleInternalError(InternalError ex){
+        return new ErrorResponse(
+                500,
+                ex.getMessage(),
+                null
+        );
+    }
+
+    @ExceptionHandler(HttpClientErrorException.Forbidden.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleForbidden(HttpClientErrorException.Forbidden ex){
+        return new ErrorResponse(
+                403,
+                ex.getMessage(),
+                null
         );
     }
 }

@@ -5,7 +5,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class DirectorDto {
+public class TmdbCrewMemberDto {
     private Long id;
     private String name;
+    private String job;
+    private String department;
 }

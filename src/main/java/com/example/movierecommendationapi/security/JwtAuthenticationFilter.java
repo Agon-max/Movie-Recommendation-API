@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -21,13 +22,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
+
+        String path = request.getRequestURI();
+
+//        if (path.startsWith("/v3/api-docs") ||
+//                path.startsWith("/swagger-ui") ||
+//                path.startsWith("/swagger-resources") ||
+//                path.startsWith("/configuration") ||
+//                path.startsWith("/webjars")) {
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
+
         String token = extractToken(request);
         
         if (token != null && tokenProvider.validateToken(token)) {
             String username = tokenProvider.extractUsername(token);
             UsernamePasswordAuthenticationToken authentication = 
-                    new UsernamePasswordAuthenticationToken(username, null, null);
+                    new UsernamePasswordAuthenticationToken(username, null, List.of());
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 

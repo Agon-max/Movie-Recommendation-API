@@ -33,12 +33,19 @@ public class AuthService {
     }
 
     public User registerUser(String username, String email, String password) {
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username '" + username + "' is already taken");
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email '" + email + "' is already in use");
+        }
+
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         user.setTotalPoints(0);
-        
+
         return userRepository.save(user);
     }
 }

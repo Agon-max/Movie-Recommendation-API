@@ -1,18 +1,15 @@
 package com.example.movierecommendationapi.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
-public class TmdbGenreDto {
+public class TmdbCastMemberDto {
     private Long id;
-
-    @JsonProperty("name")
     private String name;
+
+    @JsonProperty("known_for_department")
+    private String knownForDepartment;
 }

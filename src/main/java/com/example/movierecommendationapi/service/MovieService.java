@@ -1,17 +1,20 @@
 package com.example.movierecommendationapi.service;
 
+import com.example.movierecommendationapi.dto.ActorDto;
 import com.example.movierecommendationapi.dto.MovieDto;
-import com.example.movierecommendationapi.dto.TmdbGenreDto;
 import com.example.movierecommendationapi.dto.TmdbMovieDto;
-import com.example.movierecommendationapi.dto.TmdbMovieResponseDto;
-import com.example.movierecommendationapi.entity.Genre;
+import com.example.movierecommendationapi.entity.Actor;
 import com.example.movierecommendationapi.entity.Movie;
+import com.example.movierecommendationapi.error.ResourceNotFound;
 import com.example.movierecommendationapi.mapper.MovieMapper;
 import com.example.movierecommendationapi.repository.MovieRepository;
+import com.example.movierecommendationapi.wrapper.TmdbMovieResponseDto;
+import jakarta.transaction.Transactional;
+import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 public class MovieService {
@@ -25,44 +28,49 @@ public class MovieService {
         this.tmdbService = tmdbService;
     }
 
-    public MovieDto saveMovie(MovieDto movieDto) {
-        var savedMovie = movieRepository.save(movieMapper.toEntity(movieDto));
-        return movieMapper.toDto(savedMovie);
+    // Method to create a new movie resource/record
+    public MovieDto createMovie(MovieDto movieDto) {
+        var createdMovie = movieRepository.save(movieMapper.toEntity(movieDto));
+        return movieMapper.toDto(createdMovie);
     }
 
+    // Get movie by title using pagination for performance
+    @Transactional
+    public Page<MovieDto> getMovieByTitle(String movieTitle, Pageable pageable){
+        var movieToReturn = movieRepository.getMovieByTitle(movieTitle, pageable);
+        return movieToReturn.map(movieMapper::toDto);
+    }
+
+    // Convenient method to check if a movie exists
     public boolean movieExists(Long id) {
         return movieRepository.existsById(id);
     }
 
-//    public void importMovies() {
-//
-//        TmdbMovieResponseDto response = tmdbService.getPopularMovies();
-//
-//        Map<Long, Genre> genreMap = tmdbService.getGenres()
-//                .stream()
-//                .collect(Collectors.toMap(TmdbGenreDto::getId,
-//                        g -> new Genre(g.getId(), g.getTitle())));
-//
-//        for (TmdbMovieDto dto : response.getResults()) {
-//
-//            if (movieRepository.existsById(dto.getId()))
-//                continue;
-//
-//            Movie movie = new Movie();
-//
-//            List<Genre> genres = dto.getGenre_ids()
-//                    .stream()
-//                    .map(genreMap::get)
-//                    .filter(Objects::nonNull)
-//                    .collect(Collectors.toList());
-//
-//            movie.setTitle(dto.getTitle());
-//            movie.setOverview(dto.getOverview());
-//            movie.setGenres(genres);
-//
-//            movieRepository.save(movie);
-//        }
-//    }
+    // Get movie by ID
+    public MovieDto getMovieById(Long id) {
+        return movieRepository.findById(id)
+                .map(movieMapper::toDto)
+                .orElseThrow(()-> new ResourceNotFound("Movie not found!"));
+    }
 
+    // Update movie
+    @Transactional
+    public MovieDto updateMovie(Long id, MovieDto movieDto) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFound("Movie not found"));
+
+        movieMapper.updateMovieFromDto(movieDto, movie);
+        return movieMapper.toDto(movie);
+    }
+
+    // Delete movie
+    public boolean deleteMovie(long id){
+        if(!movieExists(id) || getMovieById(id) == null){
+            throw new ResourceNotFound("Movie not found!");
+        }
+        var movie = getMovieById(id);
+        movieRepository.delete(movieMapper.toEntity(movie));
+        return true;
+    }
 
 }

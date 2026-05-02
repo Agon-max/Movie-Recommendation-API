@@ -6,4 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ActorDto {
+    private Long id;
+    private String name;
 }

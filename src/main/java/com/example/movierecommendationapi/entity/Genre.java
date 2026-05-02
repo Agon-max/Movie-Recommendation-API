@@ -21,12 +21,17 @@ public class Genre {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(unique = true)
+    private Long tmdbId;
+
     private String title;
     @ManyToMany(mappedBy = "genres")
     private List<Movie> movies = new ArrayList<>();
 
-    public Genre(Long id, String title) {
-            this.id = id;
-            this.title = title;
+    public Genre(Long id, Long tmdbId, String title) {
+        this.id = id;
+        this.tmdbId = tmdbId;
+        this.title = title;
     }
 }

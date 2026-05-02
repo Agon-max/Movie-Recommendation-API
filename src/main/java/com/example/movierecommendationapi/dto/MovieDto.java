@@ -10,31 +10,27 @@ import java.util.List;
 @Getter
 @Setter
 public class MovieDto {
-    @NotNull
     private Long id;
+
     @NotBlank
     @Size(max = 255)
     private String title;
+
     @Size(max = 2000)
     private String overview;
 
-    @NotBlank
-    @Size(max = 15)
+    @Size(max = 20)
     private String language;
 
-    @NotEmpty
-    @Size(max = 255)
-    private List<@NotNull DirectorDto> director;
+    private List<DirectorDto> directors;
 
-    @NotNull
+    private List<GenreDto> genres;
+
+    private List<ActorDto> actors;
+
     private LocalDateTime releaseDate;
-
-    @NotEmpty
-    private List<@NotBlank ActorDto> actors;
 
     @DecimalMin("0.0")
     @DecimalMax("10.0")
-
     private Double averageRating;
-
 }

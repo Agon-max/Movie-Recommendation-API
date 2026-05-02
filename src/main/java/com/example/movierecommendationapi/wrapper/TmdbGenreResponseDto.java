@@ -1,5 +1,6 @@
-package com.example.movierecommendationapi.dto;
+package com.example.movierecommendationapi.wrapper;
 
+import com.example.movierecommendationapi.dto.TmdbGenreDto;
 import lombok.Getter;
 import lombok.Setter;
 
