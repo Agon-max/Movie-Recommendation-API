@@ -17,16 +17,35 @@ public class ActorService {
     private final ActorRepository actorRepository;
     private final TmdbService tmdbService;
     private final ActorMapper actorMapper;
+    private final MovieService movieService;
 
-    public ActorService(ActorRepository actorRepository, TmdbService tmdbService, ActorMapper actorMapper) {
+    public ActorService(ActorRepository actorRepository, TmdbService tmdbService, ActorMapper actorMapper, MovieService movieService) {
         this.actorRepository = actorRepository;
         this.tmdbService = tmdbService;
         this.actorMapper = actorMapper;
+        this.movieService = movieService;
     }
 
     // Check if actor exists
     public boolean actorExists(Long id) {
         return actorRepository.existsById(id);
+    }
+
+    public List<ActorDto> getAllActorsByMovie(Long movieId, String movieTitle) {
+
+        if (movieId != null && !movieService.movieExists(movieId)) {
+            throw new ResourceNotFound("Movie not found!");
+        }
+
+        if ((movieId == null) && (movieTitle == null || movieTitle.isBlank())) {
+            throw new IllegalArgumentException("At least one filter must be provided");
+        }
+
+        var actors = actorRepository.getActorsByMovie(movieId, movieTitle);
+
+        return actors.stream()
+                .map(actorMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     // Get actor by Id
@@ -35,14 +54,7 @@ public class ActorService {
                 .map(actorMapper::toDto)
                 .orElseThrow(() -> new ResourceNotFound("Actor not found!"));
     }
-
     // Get all actors
-    public List<ActorDto> getAllActors() {
-        return actorRepository.findAll()
-                .stream()
-                .map(actorMapper::toDto)
-                .collect(Collectors.toList());
-    }
 
     // Create a new actor
     public ActorDto createActor(ActorDto actorDto) {
@@ -56,13 +68,8 @@ public class ActorService {
     public ActorDto updateActor(Long id, ActorDto actorDto) {
         Actor existingActor = actorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFound("Actor not found!"));
-
-        // Option 1: manual update (recommended for control)
-        existingActor.setName(actorDto.getName());
-        // add other fields here
-
-        Actor updatedActor = actorRepository.save(existingActor);
-        return actorMapper.toDto(updatedActor);
+        actorMapper.updateManagedActor(actorDto, existingActor);
+        return actorMapper.toDto(existingActor);
     }
 
     // Delete an actor
