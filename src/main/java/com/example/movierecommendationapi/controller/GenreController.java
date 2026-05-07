@@ -3,6 +3,8 @@ package com.example.movierecommendationapi.controller;
 import com.example.movierecommendationapi.dto.GenreDto;
 import com.example.movierecommendationapi.service.GenreService;
 import com.example.movierecommendationapi.service.TmdbService;
+import com.example.movierecommendationapi.wrapper.TmdbGenreResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,5 +56,11 @@ public class GenreController {
     public ResponseEntity<Void> deleteGenre(@PathVariable Long id) {
         genreService.deleteGenre(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "Imports genres from the TMDB service into the local database.")
+    public ResponseEntity<TmdbGenreResponseDto> importGenresFromExternalService(){
+        return ResponseEntity.ok(genreService.importGenresIntoLocalDB());
     }
 }

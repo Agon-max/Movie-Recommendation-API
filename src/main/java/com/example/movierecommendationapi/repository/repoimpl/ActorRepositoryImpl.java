@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import java.util.List;
+import java.util.Optional;
 
 public class ActorRepositoryImpl implements ActorRepositoryCustom {
 
@@ -38,5 +39,11 @@ public class ActorRepositoryImpl implements ActorRepositoryCustom {
         }
 
         return query.getResultList();
+    }
+
+    @Override
+    public Optional<Actor> findByTmdbId(Long tmdbId) {
+        Actor actor = entityManager.find(Actor.class, tmdbId);  // Or query by tmdbId
+        return Optional.ofNullable(actor);
     }
 }

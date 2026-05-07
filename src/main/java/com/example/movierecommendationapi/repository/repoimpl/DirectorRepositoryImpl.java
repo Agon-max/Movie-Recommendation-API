@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import java.util.List;
+import java.util.Optional;
 
 public class DirectorRepositoryImpl implements DirectorRepositoryCustom {
 
@@ -39,4 +40,11 @@ public class DirectorRepositoryImpl implements DirectorRepositoryCustom {
 
         return query.getResultList();
     }
+
+    @Override
+    public Optional<Director> findByTmdbId(Long tmdbId) {
+        Director director = entityManager.find(Director.class, tmdbId);
+        return Optional.ofNullable(director);
+    }
+
 }

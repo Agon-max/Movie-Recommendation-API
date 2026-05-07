@@ -13,14 +13,7 @@ public interface MovieMapper {
 
     Movie toEntity(MovieDto movieDto);
 
-    /**
-     * Maps DTO into an existing entity without creating a new object.
-     *
-     * Updates a managed entity so that JPA dirty checking can persist changes.
-     *
-     * @param movieDto the DTO object containing updated values
-     * @param movie the target entity to update
-     */
     @Mapping(target = "id", ignore = true)
     void updateMovieFromDto(MovieDto movieDto, @MappingTarget Movie movie);
+
 }

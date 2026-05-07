@@ -6,6 +6,8 @@ import com.example.movierecommendationapi.repository.customRepos.MovieRepository
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+import java.util.Optional;
+
 public class MovieRepositoryImpl implements MovieRepositoryCustom {
 
     @PersistenceContext
@@ -15,8 +17,9 @@ public class MovieRepositoryImpl implements MovieRepositoryCustom {
 
     }
 
-//    @Override
-//    public Movie updateMovie(Movie movie) {
-//        return entityManager.merge(movie);
-//    }
+    @Override
+    public Optional<Movie> findByTmdbId(Long tmdbId) {
+        var movie = entityManager.find(Movie.class, tmdbId);
+        return Optional.ofNullable(movie);
+    }
 }

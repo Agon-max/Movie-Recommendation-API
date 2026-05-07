@@ -6,6 +6,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DirectorDto {
+
     private Long id;
+    private Long tmdbId;
     private String name;
 }

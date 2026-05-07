@@ -1,10 +1,12 @@
 package com.example.movierecommendationapi.service;
 
 import com.example.movierecommendationapi.dto.GenreDto;
+import com.example.movierecommendationapi.dto.TmdbGenreDto;
 import com.example.movierecommendationapi.entity.Genre;
 import com.example.movierecommendationapi.error.ResourceNotFound;
 import com.example.movierecommendationapi.mapper.GenreMapper;
 import com.example.movierecommendationapi.repository.GenreRepository;
+import com.example.movierecommendationapi.wrapper.TmdbGenreResponseDto;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -60,5 +62,20 @@ public class GenreService {
             throw new ResourceNotFound("Genre not found!");
         }
         genreRepository.deleteById(id);
+    }
+
+    public TmdbGenreResponseDto importGenresIntoLocalDB(){
+        var responseGenres = tmdbService.getGenres();
+        if(responseGenres == null){
+            throw new ResourceNotFound("External genres not found!");
+        }
+        List<TmdbGenreDto> tmdbGenres = responseGenres.getGenres();
+        for(int i = 0; i < tmdbGenres.size(); i++){
+            GenreDto genreDto = new GenreDto();
+            genreDto.setId(tmdbGenres.get(i).getId());
+            genreDto.setTitle(tmdbGenres.get(i).getName());
+            createGenre(genreDto);
+        }
+        return responseGenres;
     }
 }

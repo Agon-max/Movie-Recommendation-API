@@ -1,10 +1,7 @@
-package com.example.movierecommendationapi.wrapper;
+package com.example.movierecommendationapi.dto;
 
-import com.example.movierecommendationapi.dto.TmdbActorDto;
-import com.example.movierecommendationapi.dto.TmdbCrewMemberDto;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.util.List;
 
 @Getter

@@ -47,4 +47,7 @@ public class  User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Wallet> wallets;
+
+    @OneToOne(mappedBy = "user")
+    private UserSurvey survey;
 }
