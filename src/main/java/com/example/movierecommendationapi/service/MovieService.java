@@ -20,12 +20,10 @@ import java.util.List;
 public class MovieService {
     private final MovieRepository movieRepository;
     private final MovieMapper movieMapper;
-    private final TmdbService tmdbService;
 
-    public MovieService(MovieRepository movieRepository, MovieMapper movieMapper, TmdbService tmdbService) {
+    public MovieService(MovieRepository movieRepository, MovieMapper movieMapper) {
         this.movieRepository = movieRepository;
         this.movieMapper = movieMapper;
-        this.tmdbService = tmdbService;
     }
 
     // Method to create a new movie resource/record

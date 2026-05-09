@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "user_preferences")
@@ -23,13 +24,13 @@ public class UserPreferences {
     private User user;
 
     @Column(columnDefinition = "TEXT")
-    private String favoriteGenres; // JSON: ["Action", "Comedy"]
+    private List<String> favoriteGenres; // JSON: ["Action", "Comedy"]
 
     @Column(columnDefinition = "TEXT")
-    private String favoriteActors; // JSON: ["Actor1", "Actor2"]
+    private List<String> favoriteActors; // JSON: ["Actor1", "Actor2"]
 
     @Column(columnDefinition = "TEXT")
-    private String favoriteDirectors; // JSON: ["Director1"]
+    private List<String> favoriteDirectors; // JSON: ["Director1"]
 
     @Column(columnDefinition = "TEXT")
     private String watchHistorySummary; // "Watched 10 movies: 5 Action, 3 Comedy, 2 Drama"

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "user_surveys")
@@ -18,18 +19,17 @@ public class UserSurvey {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(columnDefinition = "TEXT")
-    private String favoriteGenres; // JSON: ["Action", "Comedy"]
+    private List<String> favoriteGenres;
 
     @Column(columnDefinition = "TEXT")
-    private String favoriteActors; // JSON: ["Actor1", "Actor2"]
-
+    private List<String> favoriteActors;
     @Column(columnDefinition = "TEXT")
-    private String favoriteDirectors; // JSON: ["Director1", "Director2"]
+    private List<String> favoriteDirectors;
 
     private String dislikes; // Optional: genres/content user dislikes
 

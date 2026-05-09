@@ -1,6 +1,8 @@
 package com.example.movierecommendationapi.service;
 
 import com.example.movierecommendationapi.dto.MovieDto;
+import com.example.movierecommendationapi.entity.Movie;
+import com.example.movierecommendationapi.mapper.MovieMapper;
 import com.example.movierecommendationapi.repository.MovieRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,8 +18,10 @@ import java.util.stream.Collectors;
 public class RecommendationService {
     private final UserPreferencesService userPreferencesService;
     private final MovieRepository movieRepository;
+    private final TmdbService tmdbService;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final MovieMapper movieMapper;
 
     @Value("${openrouter.api-key:}")
     private String openRouterApiKey;
@@ -25,11 +29,13 @@ public class RecommendationService {
     @Value("${openrouter.base-url:https://openrouter.ai/api/v1}")
     private String openRouterBaseUrl;
 
-    public RecommendationService(UserPreferencesService userPreferencesService, MovieRepository movieRepository) {
+    public RecommendationService(UserPreferencesService userPreferencesService, MovieRepository movieRepository, TmdbService tmdbService, MovieMapper movieMapper) {
         this.userPreferencesService = userPreferencesService;
         this.movieRepository = movieRepository;
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
+        this.tmdbService = tmdbService;
+        this.movieMapper = movieMapper;
     }
 
     public List<MovieDto> getRecommendations(Long userId, int count) {
@@ -51,8 +57,11 @@ public class RecommendationService {
         // Call OpenRouter AI
         if (openRouterApiKey == null || openRouterApiKey.isEmpty()) {
             System.out.println("OpenRouter API key not configured. Returning popular movies as fallback.");
-            return movieRepository.findAll().stream()
-                    .limit(count)
+            return tmdbService.getPopularMovies()
+                    .getResults()
+                    .stream()
+                    .map(movieMapper::toMovie)
+                    .map(movieMapper::toDto)
                     .collect(Collectors.toList());
         }
 
@@ -62,8 +71,12 @@ public class RecommendationService {
             return queryMoviesByTitles(movieTitles, count);
         } catch (Exception e) {
             System.out.println("Error calling OpenRouter: " + e.getMessage());
-            return movieRepository.findAll().stream()
-                    .limit(count)
+            // If not possible to retrieve recommendations, return popular movies
+            return tmdbService.getPopularMovies()
+                    .getResults()
+                    .stream()
+                    .map(movieMapper::toMovie)
+                    .map(movieMapper::toDto)
                     .collect(Collectors.toList());
         }
     }
@@ -118,6 +131,7 @@ public class RecommendationService {
                         .findFirst()
                         .orElse(null))
                 .filter(Objects::nonNull)
+                .map(movieMapper::toDto)
                 .collect(Collectors.toList());
     }
 }

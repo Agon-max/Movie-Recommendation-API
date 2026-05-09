@@ -31,7 +31,7 @@ public class DirectorService {
 
 
     // Get directors by movie
-    public List<DirectorDto> getAllDirectors(Long movieId, String movieTitle) {
+    public List<DirectorDto> getAllDirectorsByMovie(Long movieId, String movieTitle) {
         if (movieId != null && !movieService.movieExists(movieId)) {
             throw new ResourceNotFound("Movie not found!");
         }

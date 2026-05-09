@@ -1,6 +1,7 @@
 package com.example.movierecommendationapi.mapper;
 
 import com.example.movierecommendationapi.dto.MovieDto;
+import com.example.movierecommendationapi.dto.TmdbMovieDto;
 import com.example.movierecommendationapi.entity.Movie;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -16,4 +17,10 @@ public interface MovieMapper {
     @Mapping(target = "id", ignore = true)
     void updateMovieFromDto(MovieDto movieDto, @MappingTarget Movie movie);
 
+    TmdbMovieDto toTmdbMovieDto(Movie movie);
+
+    Movie toMovie(TmdbMovieDto movieDto);
+
+
 }
+

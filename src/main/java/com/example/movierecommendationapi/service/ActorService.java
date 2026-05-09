@@ -15,13 +15,11 @@ import java.util.stream.Collectors;
 public class ActorService {
 
     private final ActorRepository actorRepository;
-    private final TmdbService tmdbService;
     private final ActorMapper actorMapper;
     private final MovieService movieService;
 
-    public ActorService(ActorRepository actorRepository, TmdbService tmdbService, ActorMapper actorMapper, MovieService movieService) {
+    public ActorService(ActorRepository actorRepository, ActorMapper actorMapper, MovieService movieService) {
         this.actorRepository = actorRepository;
-        this.tmdbService = tmdbService;
         this.actorMapper = actorMapper;
         this.movieService = movieService;
     }
