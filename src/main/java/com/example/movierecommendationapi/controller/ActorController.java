@@ -3,6 +3,8 @@ package com.example.movierecommendationapi.controller;
 import com.example.movierecommendationapi.dto.ActorDto;
 import com.example.movierecommendationapi.service.ActorService;
 import com.example.movierecommendationapi.service.TmdbService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/actors")
+@Tag(name = "Actor Controller", description = "Actor management endpoints")
 public class ActorController {
 
     private final ActorService actorService;
@@ -24,18 +27,21 @@ public class ActorController {
 
     // Get actor by ID
     @GetMapping("/{id}")
+    @Operation(summary = "Get an actor by ID")
     public ResponseEntity<ActorDto> getActorById(@PathVariable Long id) {
         return ResponseEntity.ok(actorService.getActorById(id));
     }
 
     // Get all actors
     @GetMapping
+    @Operation(summary = "Get all actors based on movie id and title")
     public ResponseEntity<List<ActorDto>> getAllActorsByMovie(Long movieId, String movieTitle) {
         return ResponseEntity.ok(actorService.getAllActorsByMovie(movieId, movieTitle));
     }
 
-    // Create actor
+    // Create a new actor
     @PostMapping
+    @Operation(summary = "Create a new actor")
     public ResponseEntity<ActorDto> createActor(@RequestBody ActorDto actorDto) {
         ActorDto createdActor = actorService.createActor(actorDto);
         return ResponseEntity.ok(createdActor);
@@ -43,6 +49,7 @@ public class ActorController {
 
     // Update actor
     @PutMapping("/{id}")
+    @Operation(summary = "Update an actor")
     public ResponseEntity<ActorDto> updateActor(
             @PathVariable Long id,
             @RequestBody ActorDto actorDto) {
@@ -53,6 +60,7 @@ public class ActorController {
 
     // Delete actor
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete an actor")
     public ResponseEntity<Void> deleteActor(@PathVariable Long id) {
         actorService.deleteActor(id);
         return ResponseEntity.noContent().build();

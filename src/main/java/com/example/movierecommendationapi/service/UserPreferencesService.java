@@ -29,6 +29,7 @@ public class UserPreferencesService {
     }
 
     public Optional<UserPreferencesDto> getPreferencesByUserId(Long userId) {
+
         return userPreferencesRepository.findByUserId(userId)
                 .map(userPreferencesMapper::toDto);
     }
@@ -47,12 +48,4 @@ public class UserPreferencesService {
         prefs.setSurveySummary("Likes " + String.join(", ", genres) + ". Favorite actors: " + String.join(", ", actors));
         return userPreferencesMapper.toDto(userPreferencesRepository.save(prefs));
     }
-
-//    private String listToJson(List<String> list) {
-//        try {
-//            return objectMapper.writeValueAsString(list);
-//        } catch (Exception e) {
-//            return "[]";
-//        }
-//    }
 }

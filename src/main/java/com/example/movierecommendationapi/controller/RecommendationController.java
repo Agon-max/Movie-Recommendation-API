@@ -5,6 +5,7 @@ import com.example.movierecommendationapi.dto.UserSurveyDto;
 import com.example.movierecommendationapi.service.RecommendationService;
 import com.example.movierecommendationapi.service.UserSurveyService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/recommendations")
+@Tag(name = "Recommendation Controller", description = "Recommendation management endpoints")
 public class RecommendationController {
     private final RecommendationService recommendationService;
     private final UserSurveyService userSurveyService;

@@ -5,6 +5,7 @@ import com.example.movierecommendationapi.service.MovieService;
 import com.example.movierecommendationapi.service.TmdbService;
 import com.example.movierecommendationapi.wrapper.TmdbMovieResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/movies")
+@Tag(name = "Movie Controller", description = "Movie management endpoints")
 public class MovieController{
 
     private final MovieService movieService;
@@ -61,8 +63,7 @@ public class MovieController{
 
    @GetMapping("/popular")
    @Operation(summary = "Get popular movies")
-   public ResponseEntity<TmdbMovieResponseDto
-           > getPopularMovies(@RequestParam(defaultValue = "1") int page){
+   public ResponseEntity<TmdbMovieResponseDto> getPopularMovies(@RequestParam(defaultValue = "1") int page){
         return ResponseEntity.ok(tmdbService.getPopularMovies());
    }
 

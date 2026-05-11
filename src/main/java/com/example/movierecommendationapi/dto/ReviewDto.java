@@ -14,8 +14,7 @@ public class ReviewDto {
     private Long movieId;
     private String title;
     private String body;
-    private boolean containsSpoilers;
-    private int helpfulVotes;
+    private int rating_score;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean pointsAwarded;

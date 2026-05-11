@@ -1,6 +1,7 @@
 package com.example.movierecommendationapi.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,7 @@ public class   User {
     private Long id;
 
     private String username;
+    @Email
     private String email;
     private String password; // Store securely (hashed)
 

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Entity
@@ -35,4 +36,10 @@ public class WatchHistory {
 
     // Prevents awarding points more than once for the same movie
     private boolean pointsAwarded;
+
+    private int number_points_awarded;
+
+    private Duration movie_progress;
+
+    private int movie_progress_percentage;
 }

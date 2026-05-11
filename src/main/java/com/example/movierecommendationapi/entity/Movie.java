@@ -1,5 +1,6 @@
 package com.example.movierecommendationapi.entity;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,6 +24,7 @@ public class Movie {
     private Long id;
 
     @Column(unique = true)
+    @Nullable
     private Long tmdbId;
 
     private String title;
@@ -40,7 +42,7 @@ public class Movie {
     )
     private List<Director> directors = new ArrayList<>();
 
-    private LocalDateTime releaseDate;
+    private String releaseDate;
 
     @ManyToMany
     @JoinTable(
@@ -64,9 +66,8 @@ public class Movie {
     private List<User> favoritedBy = new ArrayList();
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
-    private List<WatchHistory> watchHistory = new ArrayList();
+    private List<WatchHistory> watchHistory;
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
     private List<Review> reviews = new ArrayList();
-
 }

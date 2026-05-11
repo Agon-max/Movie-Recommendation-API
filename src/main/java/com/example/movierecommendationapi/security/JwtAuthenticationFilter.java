@@ -25,14 +25,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-//        if (path.startsWith("/v3/api-docs") ||
-//                path.startsWith("/swagger-ui") ||
-//                path.startsWith("/swagger-resources") ||
-//                path.startsWith("/configuration") ||
-//                path.startsWith("/webjars")) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
+        if (path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/swagger-resources") ||
+                path.startsWith("/configuration") ||
+                path.startsWith("/webjars") ||
+                path.equals("/swagger-ui.html")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String token = extractToken(request);
         

@@ -18,15 +18,14 @@ import com.example.movierecommendationapi.repository.GenreRepository;
 import com.example.movierecommendationapi.repository.MovieRepository;
 import com.example.movierecommendationapi.wrapper.TmdbGenreResponseDto;
 import com.example.movierecommendationapi.wrapper.TmdbMovieResponseDto;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class TmdbService {
@@ -91,198 +90,151 @@ public class TmdbService {
         return restTemplate.getForObject(tmdbPopularMoviesUrl + tmdbApiKey + "&page=" + page, TmdbMovieResponseDto.class);
     }
 
-//    // Import movies, actors, directors, and associate genres
-//    public void importMoviesActorsDirectorsGenres(int movieCount) {
-//        Set<Long> processedMovieIds = new HashSet<>();
-//        Set<Long> importedActorIds = new HashSet<>();
-//        Set<Long> importedDirectorIds = new HashSet<>();
-//        int page = 1;
-//        int importedMovies = 0;
-//
-//        while (importedMovies < movieCount && page <= 10) { // Limit pages
-//            TmdbMovieResponseDto moviesResponse = getPopularMovies(page);
-//            for (TmdbMovieDto movieDto : moviesResponse.getResults()) {
-//                if (processedMovieIds.add(movieDto.getId())) { // Avoid duplicates
-//                    // Save movie (assume MovieService.createMovie exists)
-//                    MovieDto movie = new MovieDto();
-//                    movie.setTmdbId(movieDto.getId());
-//                    movie.setTitle(movieDto.getTitle());
-//                    // ... set other fields ...
-//                    MovieDto savedMovie = movieService.createMovie(movie);
-//
-//                    // Associate genres
-//                    for (Long genreId : movieDto.getGenreIds()) {
-//                        Genre genre = genreRepository.findByTmdbId(genreId)
-//                                .orElseThrow(() -> new RuntimeException("Genre not found: " + genreId));                        if (genre != null) {
-//                            savedMovie.getGenres().add(genreMapper.toDto(genre));
-//                        }
-//                    }
-//                    movieService.updateMovie(savedMovie.getId(), savedMovie);
-//
-//                    // Get credits
-//                    TmdbCreditsResponseDto credits = getMovieCredits(movieDto.getId());
-//
-//                    // Import cast (actors)
-//                    for (TmdbActorDto actorDto : credits.getCast()) {
-//                        if (importedActorIds.add(actorDto.getId())) {
-//                            ActorDto actor = new ActorDto();
-//                            actor.setTmdbId(actorDto.getId());
-//                            actor.setName(actorDto.getName());
-//                            actorService.createActor(actor);
-//                        }
-//                    }
-//
-//                    // Import crew (directors, etc.)
-//                    for (TmdbCrewMemberDto crewDto : credits.getCrew()) {
-//                        if ("Director".equals(crewDto.getJob()) && importedDirectorIds.add(crewDto.getId())) {
-//                            DirectorDto director = new DirectorDto();
-//                            director.setTmdbId(crewDto.getId());
-//                            director.setName(crewDto.getName());
-//                            directorService.createDirector(director); // Assume exists
-//                        }
-//                    }
-//
-//                    importedMovies++;
-//                    if (importedMovies >= movieCount) break;
-//                }
-//            }
-//            page++;
-//        }
-//    }
-//
+    public void importExternalTMDBInfo(int movieCount) {
 
-        // Main import method (public)
-        public void importExternalTMDBInfo(int movieCount)
-        {
-            Set<Long> processedMovieIds = new HashSet<>();
-            Set<Long> importedActorIds = new HashSet<>();
-            Set<Long> importedDirectorIds = new HashSet<>();
-            int page = 1;
-            int importedMovies = 0;
+        Set<Long> processedMovieIds = new HashSet<>();
+        int page = 1;
+        int importedMovies = 0;
 
-            while (importedMovies < movieCount && page <= 10) {
-                TmdbMovieResponseDto moviesResponse = getPopularMovies(page);
-                for (TmdbMovieDto movieDto : moviesResponse.getResults()) {
-                    if (processedMovieIds.add(movieDto.getId())) {
-                        // Import movie
-                        MovieDto savedMovie = importMovie(movieDto);
+        while (importedMovies < movieCount && page <= 10) {
 
-                        // Import and associate genres
-                        importGenresForMovie(savedMovie, movieDto.getGenreIds());
+            TmdbMovieResponseDto response = getPopularMovies(page);
 
-                        // Get credits and import actors/directors (pass savedMovie)
-                        TmdbCreditsResponseDto credits = getMovieCredits(movieDto.getId());
-                        try {
-                            Thread.sleep(250);  // Delay to avoid rate limits
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
+            for (TmdbMovieDto dto : response.getResults()) {
 
-                        if (credits == null) {
-                            throw new RuntimeException("Credits not found for movie: " + movieDto.getId());
-                        }
-                        importActorsFromCredits(credits, importedActorIds, savedMovie);  // Pass movie
-                        importDirectorsFromCredits(credits, importedDirectorIds, savedMovie);  // Pass movie
+                if (!processedMovieIds.add(dto.getId())) continue;
 
-                        // Update movie with new associations
-                        movieService.updateMovie(savedMovie.getId(), savedMovie);
+                Movie movie = importMovie(dto);
 
-                        importedMovies++;
-                        if (importedMovies >= movieCount) break;
-                    }
-                }
-                page++;
+                TmdbCreditsResponseDto credits = getMovieCredits(dto.getId());
+
+                if (credits == null) continue;
+
+                // ACTORS + DIRECTORS
+                List<Actor> actors = importActorsFromCredits(credits);
+                List<Director> directors = importDirectorsFromCredits(credits);
+
+                // GENRES
+                List<Genre> genres = resolveGenres(dto.getGenreIds());
+
+                // LINK ALL RELATIONS
+                movie.setActors(actors);
+                movie.setDirectors(directors);
+                movie.setGenres(genres);
+
+                movieRepository.save(movie);
+
+                importedMovies++;
+                if (importedMovies >= movieCount) break;
             }
+
+            page++;
         }
-
-
-    // Private method to import a single movie
-    private MovieDto importMovie(TmdbMovieDto movieDto) {
-        Optional<Movie> existingMovieOpt = movieRepository.findByTmdbId(movieDto.getId());
-        if (existingMovieOpt.isPresent()) {
-            return movieService.getMovieById(existingMovieOpt.get().getId());
-        }
-        MovieDto movie = new MovieDto();
-        movie.setTmdbId(movieDto.getId());
-        movie.setTitle(movieDto.getTitle());
-        movie.setOverview(movieDto.getOverview() != null ? movieDto.getOverview() : "");
-        movie.setLanguage(movieDto.getOriginalLanguage() != null ? movieDto.getOriginalLanguage() : "");
-
-        if (movieDto.getReleaseDate() != null && !movieDto.getReleaseDate().isEmpty()) {
-            try {
-                movie.setReleaseDate(LocalDateTime.parse(movieDto.getReleaseDate() + "T00:00:00"));
-            } catch (Exception e) {
-                System.out.println("Warning: Invalid release date for movie " + movieDto.getId() + ": " + movieDto.getReleaseDate());
-                movie.setReleaseDate(null);
-            }
-        }
-
-        movie.setAverageRating(movieDto.getVoteAverage());
-        return movieService.createMovie(movie);
     }
 
 
-    // Private method to import and associate genres for a movie
-    private void importGenresForMovie(MovieDto movie, List<Long> genreIds) {
-        for (Long genreId : genreIds) {
-            Genre genre = genreRepository.findByTmdbId(genreId).orElse(null);
+    @Transactional
+    protected Movie importMovie(TmdbMovieDto dto) {
 
-            if (genre != null) {
-                movie.getGenres().add(genreMapper.toDto(genre));
-            }else{
-                throw new RuntimeException("Genre not found: " + genreId);
-            }
-        }
-        movieService.updateMovie(movie.getId(), movie);
+        movieRepository.upsertMovie(
+                dto.getId(),
+                dto.getTitle(),
+                dto.getOverview(),
+                dto.getReleaseDate(),
+                dto.getOriginalLanguage(),
+                dto.getVoteAverage()
+        );
+
+        return movieRepository.findByTmdbId(dto.getId())
+                .orElseThrow(() ->
+                        new RuntimeException("Movie not found after upsert: " + dto.getId()));
     }
 
-    // Private method to import actors from credits (add MovieDto param)
-    private void importActorsFromCredits(TmdbCreditsResponseDto credits, Set<Long> importedActorIds, MovieDto movie) {
+
+
+    private List<Actor> importActorsFromCredits(TmdbCreditsResponseDto credits) {
+
+        List<Actor> actors = new ArrayList<>();
+
         if (credits.getCast() == null) {
-            System.out.println("Warning: Cast not found for movie: " + credits.getId());
-            return;
+            return actors;
         }
-        for (TmdbActorDto actorDto : credits.getCast()) {
-            if (importedActorIds.add(actorDto.getId())) {
-                // Check if exists
-                Optional<Actor> existing = actorRepository.findByTmdbId(actorDto.getId());
-                ActorDto savedActor;
-                if (existing.isPresent()) {
-                    savedActor = actorMapper.toDto(existing.get());
-                } else {
-                    ActorDto newActor = new ActorDto();
-                    newActor.setTmdbId(actorDto.getId());
-                    newActor.setName(actorDto.getName());
-                    savedActor = actorService.createActor(newActor);
-                }
-                movie.getActors().add(savedActor);
+
+        Set<Long> seen = new HashSet<>();
+
+        for (TmdbActorDto dto : credits.getCast()) {
+
+            if (!seen.add(dto.getId())) {
+                continue;
             }
+
+            Object[] row = (Object[]) actorRepository.upsertActor(
+                    dto.getId(),
+                    dto.getName()
+            );
+
+            Actor actor = new Actor();
+
+            actor.setId(((Number) row[0]).longValue());
+            actor.setTmdbId(((Number) row[1]).longValue());
+            actor.setName((String) row[2]);
+
+            actors.add(actor);
         }
+
+        return actors;
     }
 
+    @Transactional
+    protected List<Director> importDirectorsFromCredits(TmdbCreditsResponseDto credits) {
 
-    // Private method to import directors from credits (add MovieDto param)
-    private void importDirectorsFromCredits(TmdbCreditsResponseDto credits, Set<Long> importedDirectorIds, MovieDto movie) {
-        if (credits.getCrew() == null) {
-            System.out.println("Warning: Crew not found for movie: " + credits.getId());
-            return;
-        }
-        for (TmdbCrewMemberDto crewDto : credits.getCrew()) {
-            if ("Director".equals(crewDto.getJob()) && importedDirectorIds.add(crewDto.getId())) {
-                // Check if exists (add this)
-                Optional<Director> existing = directorRepository.findByTmdbId(crewDto.getId());
-                DirectorDto savedDirector;
-                if (existing.isPresent()) {
-                    savedDirector = directorMapper.toDto(existing.get());
-                } else {
-                    DirectorDto newDirector = new DirectorDto();
-                    newDirector.setTmdbId(crewDto.getId());
-                    newDirector.setName(crewDto.getName());
-                    savedDirector = directorService.createDirector(newDirector);
-                }
-                movie.getDirectors().add(savedDirector);  // Associate
+        List<Director> directors = new ArrayList<>();
+
+        if (credits.getCrew() == null)
+            return directors;
+
+        Set<Long> processedDirectorIds = new HashSet<>();
+
+        for (TmdbCrewMemberDto dto : credits.getCrew()) {
+
+            if (!"Director".equals(dto.getJob()))
+                continue;
+
+            if (dto.getId() == null)
+                continue;
+
+            if (!processedDirectorIds.add(dto.getId())) {
+                continue;
             }
+
+            directorRepository.upsertDirector(
+                    dto.getId(),
+                    dto.getName()
+            );
+
+            Director director = directorRepository.findByTmdbId(dto.getId())
+                    .orElseThrow(() ->
+                            new RuntimeException("Director not found after upsert: " + dto.getId()));
+
+            directors.add(director);
         }
+
+        return directors;
+    }
+
+    private List<Genre> resolveGenres(List<Long> genreIds) {
+
+        List<Genre> genres = new ArrayList<>();
+
+        if (genreIds == null) return genres;
+
+        for (Long tmdbId : genreIds) {
+
+            genreRepository.findByTmdbId(tmdbId)
+                    .ifPresent(genres::add);
+        }
+
+        return genres;
     }
 
 }

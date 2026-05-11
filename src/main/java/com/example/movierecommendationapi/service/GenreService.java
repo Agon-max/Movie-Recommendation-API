@@ -64,18 +64,26 @@ public class GenreService {
         genreRepository.deleteById(id);
     }
 
-    public TmdbGenreResponseDto importGenresIntoLocalDB(){
+    public TmdbGenreResponseDto importGenresIntoLocalDB() {
+
         var responseGenres = tmdbService.getGenres();
-        if(responseGenres == null){
+
+        if (responseGenres == null) {
             throw new ResourceNotFound("External genres not found!");
         }
+
         List<TmdbGenreDto> tmdbGenres = responseGenres.getGenres();
-        for(int i = 0; i < tmdbGenres.size(); i++){
+
+        for (TmdbGenreDto tmdbGenre : tmdbGenres) {
+
             GenreDto genreDto = new GenreDto();
-            genreDto.setId(tmdbGenres.get(i).getId());
-            genreDto.setTitle(tmdbGenres.get(i).getName());
+
+            genreDto.setTmdbId(tmdbGenre.getId());
+            genreDto.setTitle(tmdbGenre.getName());
+
             createGenre(genreDto);
         }
+
         return responseGenres;
     }
 }

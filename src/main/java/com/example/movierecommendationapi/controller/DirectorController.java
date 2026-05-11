@@ -5,6 +5,7 @@ import com.example.movierecommendationapi.service.DirectorService;
 import com.example.movierecommendationapi.service.MovieService;
 import com.example.movierecommendationapi.service.TmdbService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/directors")
+@Tag(name = "Director Controller", description = "Director management endpoints")
 public class DirectorController {
     private final DirectorService directorService;
 

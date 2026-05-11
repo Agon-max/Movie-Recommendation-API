@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -22,13 +23,13 @@ public class MovieDto {
     @Size(max = 20)
     private String language;
 
-    private List<DirectorDto> directors;
+    private List<Long> directorIds  = new ArrayList<Long>();
 
-    private List<GenreDto> genres;
+    private List<Long> genreIds = new ArrayList<Long>();
 
-    private List<ActorDto> actors;
+    private List<Long> actorIds = new ArrayList<Long>();
 
-    private LocalDateTime releaseDate;
+    private String releaseDate;
 
     @DecimalMin("0.0")
     @DecimalMax("10.0")

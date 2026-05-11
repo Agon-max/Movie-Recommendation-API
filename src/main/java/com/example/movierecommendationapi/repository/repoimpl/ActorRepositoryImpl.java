@@ -4,6 +4,10 @@ import com.example.movierecommendationapi.entity.Actor;
 import com.example.movierecommendationapi.repository.customRepos.ActorRepositoryCustom;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,4 +50,6 @@ public class ActorRepositoryImpl implements ActorRepositoryCustom {
         Actor actor = entityManager.find(Actor.class, tmdbId);  // Or query by tmdbId
         return Optional.ofNullable(actor);
     }
+
+
 }
