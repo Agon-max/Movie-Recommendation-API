@@ -60,7 +60,9 @@ public class DirectorService {
 
     // Create a new director
     public DirectorDto createDirector(DirectorDto directorDto) {
-        Director director = directorMapper.toEntity(directorDto);
+        Director director = new Director();
+        director.setTmdbId(directorDto.getTmdbId());
+        director.setName(directorDto.getName());
         Director savedDirector = directorRepository.save(director);
         return directorMapper.toDto(savedDirector);
     }

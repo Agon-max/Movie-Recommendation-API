@@ -11,7 +11,6 @@ import java.util.List;
 @Getter
 @Setter
 public class MovieDto {
-    private Long id;
     private Long tmdbId;
     @NotBlank
     @Size(max = 255)

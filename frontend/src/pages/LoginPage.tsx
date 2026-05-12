@@ -23,11 +23,13 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
+        debugger;
       const res = await authApi.login(form);
       const user = await usersApi.getById(res.userId);
       login(res.token, user);
       navigate('/');
     } catch {
+        debugger;
       setError('Invalid username or password.');
     } finally {
       setLoading(false);

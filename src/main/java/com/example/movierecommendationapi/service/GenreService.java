@@ -44,7 +44,9 @@ public class GenreService {
     }
 
     public GenreDto createGenre(GenreDto genreDto) {
-        Genre genre = genreMapper.toEntity(genreDto);
+        Genre genre = new Genre();
+        genre.setTmdbId(genreDto.getTmdbId());
+        genre.setTitle(genreDto.getTitle());
         Genre savedGenre = genreRepository.save(genre);
         return genreMapper.toDto(savedGenre);
     }

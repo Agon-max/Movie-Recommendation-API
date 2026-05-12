@@ -28,8 +28,15 @@ public class MovieService {
 
     // Method to create a new movie resource/record
     public MovieDto createMovie(MovieDto movieDto) {
-        var createdMovie = movieRepository.save(movieMapper.toEntity(movieDto));
-        return movieMapper.toDto(createdMovie);
+        Movie movie = new Movie();
+        movie.setTmdbId(movieDto.getTmdbId());
+        movie.setTitle(movieDto.getTitle());
+        movie.setLanguage(movieDto.getLanguage());
+        movie.setOverview(movieDto.getOverview());
+        movie.setReleaseDate(movieDto.getReleaseDate());
+        movie.setAverageRating(movieDto.getAverageRating());
+        movieRepository.save(movie);
+        return movieMapper.toDto(movie);
     }
 
     // Get movie by title using pagination for performance

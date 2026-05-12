@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9090';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9290';
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -9,7 +9,15 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  const isAuthRequest =
+    config.url?.includes('/auth/login') ||
+    config.url?.includes('/auth/register');
+
+  if (token && !isAuthRequest) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   return config;
 });
 

@@ -42,7 +42,7 @@ public class ActorController {
     // Create a new actor
     @PostMapping
     @Operation(summary = "Create a new actor")
-    public ResponseEntity<ActorDto> createActor(@RequestBody ActorDto actorDto) {
+    public ResponseEntity<ActorDto> createActor(ActorDto actorDto) {
         ActorDto createdActor = actorService.createActor(actorDto);
         return ResponseEntity.ok(createdActor);
     }

@@ -54,9 +54,12 @@ public class ActorService {
     }
     // Get all actors
 
+    @Transactional
     // Create a new actor
     public ActorDto createActor(ActorDto actorDto) {
-        Actor actor = actorMapper.toEntity(actorDto);
+        Actor actor = new Actor();
+        actor.setTmdbId(actorDto.getTmdbId());
+        actor.setName(actorDto.getName());
         Actor savedActor = actorRepository.save(actor);
         return actorMapper.toDto(savedActor);
     }
