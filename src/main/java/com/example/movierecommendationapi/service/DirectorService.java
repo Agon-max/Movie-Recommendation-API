@@ -2,6 +2,7 @@ package com.example.movierecommendationapi.service;
 
 import com.example.movierecommendationapi.dto.DirectorDto;
 import com.example.movierecommendationapi.entity.Director;
+import com.example.movierecommendationapi.entity.Genre;
 import com.example.movierecommendationapi.error.ResourceNotFound;
 import com.example.movierecommendationapi.mapper.DirectorMapper;
 import com.example.movierecommendationapi.repository.DirectorRepository;
@@ -82,5 +83,10 @@ public class DirectorService {
             throw new ResourceNotFound("Director not found!");
         }
         directorRepository.deleteById(id);
+    }
+
+    public Director getDirectorEntityById(Long id) {
+        return directorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Director not found"));
     }
 }

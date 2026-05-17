@@ -4,6 +4,5 @@ public enum PointEventType {
     WATCH_MOVIE,
     WRITE_REVIEW,
     FIRST_LOGIN,
-    REFERRAL,
-    BONUS
+    REWARD_REDEMPTION_BONUS
 }

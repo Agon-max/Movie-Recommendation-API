@@ -1,61 +1,28 @@
 package com.example.movierecommendationapi.service;
 
-import com.example.movierecommendationapi.dto.MovieDto;
 import com.example.movierecommendationapi.dto.*;
-import com.example.movierecommendationapi.dto.TmdbActorDto;
-import com.example.movierecommendationapi.dto.TmdbCreditsResponseDto;
-import com.example.movierecommendationapi.dto.TmdbMovieDto;
-import com.example.movierecommendationapi.entity.Actor;
-import com.example.movierecommendationapi.entity.Director;
-import com.example.movierecommendationapi.entity.Genre;
-import com.example.movierecommendationapi.entity.Movie;
-import com.example.movierecommendationapi.mapper.ActorMapper;
-import com.example.movierecommendationapi.mapper.DirectorMapper;
-import com.example.movierecommendationapi.mapper.GenreMapper;
-import com.example.movierecommendationapi.repository.ActorRepository;
-import com.example.movierecommendationapi.repository.DirectorRepository;
-import com.example.movierecommendationapi.repository.GenreRepository;
-import com.example.movierecommendationapi.repository.MovieRepository;
+import com.example.movierecommendationapi.entity.*;
+import com.example.movierecommendationapi.error.ResourceNotFound;
+import com.example.movierecommendationapi.repository.*;
 import com.example.movierecommendationapi.wrapper.TmdbGenreResponseDto;
 import com.example.movierecommendationapi.wrapper.TmdbMovieResponseDto;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
 public class TmdbService {
 
     private final RestTemplate restTemplate;
-    private final MovieService movieService;
-    private final ActorService actorService;
-    private final ActorRepository actorRepository;
-    private final ActorMapper actorMapper;
-    private final DirectorService directorService;
-    private final GenreRepository genreRepository;
-    private final GenreMapper genreMapper;
     private final MovieRepository movieRepository;
+    private final ActorRepository actorRepository;
     private final DirectorRepository directorRepository;
-    private final DirectorMapper directorMapper;
-
-    public TmdbService(RestTemplate restTemplate, MovieService movieService, ActorService actorService, DirectorService directorService, GenreRepository genreRepository, GenreMapper genreMapper, MovieRepository movieRepository, ActorRepository actorRepository, ActorMapper actorMapper,
-                       DirectorRepository directorRepository, DirectorMapper directorMapper) {
-        this.restTemplate = restTemplate;
-        this.movieService = movieService;
-        this.actorService = actorService;
-        this.directorService = directorService;
-        this.genreRepository = genreRepository;
-        this.genreMapper = genreMapper;
-        this.movieRepository = movieRepository;
-        this.actorRepository = actorRepository;
-        this.actorMapper = actorMapper;
-        this.directorRepository = directorRepository;
-        this.directorMapper = directorMapper;
-    }
+    private final GenreRepository genreRepository;
+    private final ImportJobRepository importJobRepository;
 
     @Value("${tmdb.api-key}")
     private String tmdbApiKey;
@@ -63,180 +30,259 @@ public class TmdbService {
     @Value("${tmdb.popular-movies-url}")
     private String tmdbPopularMoviesUrl;
 
-    @Value("${tmdb.genre-url}")
-    private String tmdbGenreUrl;
-
     @Value("${tmdb.credits-url}")
     private String tmdbCreditsUrl;
 
-    //Get popular movies of the current year.
-    public TmdbMovieResponseDto getPopularMovies() {
-        return restTemplate.getForObject(tmdbPopularMoviesUrl + tmdbApiKey, TmdbMovieResponseDto.class);
+    @Value("${tmdb.genre-url}")
+    private String tmdbGenreUrl;
+
+    @Value("${tmdb.movie-details}")
+    private String tmdbMovieDetails;
+
+    public TmdbService(
+            RestTemplate restTemplate,
+            MovieRepository movieRepository,
+            ActorRepository actorRepository,
+            DirectorRepository directorRepository,
+            GenreRepository genreRepository,
+            ImportJobRepository importJobRepository
+    ) {
+        this.restTemplate = restTemplate;
+        this.movieRepository = movieRepository;
+        this.actorRepository = actorRepository;
+        this.directorRepository = directorRepository;
+        this.genreRepository = genreRepository;
+        this.importJobRepository = importJobRepository;
     }
 
-    // Get genres
-    public TmdbGenreResponseDto getGenres() {
+    // Get genres public
+    TmdbGenreResponseDto getGenres() {
         return restTemplate.getForObject(tmdbGenreUrl, TmdbGenreResponseDto.class);
     }
 
-    // Get credits for a movie
-    public TmdbCreditsResponseDto getMovieCredits(Long movieId) {
-        String url = tmdbCreditsUrl.replace("{movieId}", movieId.toString());
-        return restTemplate.getForObject(url, TmdbCreditsResponseDto.class);
+    public TmdbMovieResponseDto getPopularMovies() {
+        return restTemplate.getForObject(
+                tmdbPopularMoviesUrl + tmdbApiKey,
+                TmdbMovieResponseDto.class
+        );
     }
 
-    // Get popular movies with pagination
-    public TmdbMovieResponseDto getPopularMovies(int page) {
-        return restTemplate.getForObject(tmdbPopularMoviesUrl + tmdbApiKey + "&page=" + page, TmdbMovieResponseDto.class);
+    // -------------------------
+    // PUBLIC ENTRY POINT
+    // -------------------------
+    public void importExternalTMDBInfo(
+            int movieCount,
+            ImportJob job
+    ) {
+
+        List<TmdbMovieDto> collectedMovies =
+                fetchPopularMovies(movieCount);
+
+        List<Movie> savedMovies =
+                saveBasicMovies(collectedMovies);
+
+        enrichMovies(savedMovies, job);
     }
 
-    public void importExternalTMDBInfo(int movieCount) {
+    // -------------------------
+    // STEP 1: FETCH MOVIES ONLY
+    // -------------------------
+    private List<TmdbMovieDto> fetchPopularMovies(int movieCount) {
 
-        Set<Long> processedMovieIds = new HashSet<>();
+        List<TmdbMovieDto> results = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
+
         int page = 1;
-        int importedMovies = 0;
 
-        while (importedMovies < movieCount && page <= 10) {
+        while (results.size() < movieCount && page <= 10) {
 
-            TmdbMovieResponseDto response = getPopularMovies(page);
+            TmdbMovieResponseDto response =
+                    restTemplate.getForObject(
+                            tmdbPopularMoviesUrl + tmdbApiKey + "&page=" + page,
+                            TmdbMovieResponseDto.class
+                    );
+
+            if (response == null || response.getResults() == null) break;
 
             for (TmdbMovieDto dto : response.getResults()) {
 
-                if (!processedMovieIds.add(dto.getId())) continue;
+                if (dto.getId() == null) continue;
+                if (!seen.add(dto.getId())) continue;
 
-                Movie movie = importMovie(dto);
+                results.add(dto);
 
-                TmdbCreditsResponseDto credits = getMovieCredits(dto.getId());
-
-                if (credits == null) continue;
-
-                // ACTORS + DIRECTORS
-                List<Actor> actors = importActorsFromCredits(credits);
-                List<Director> directors = importDirectorsFromCredits(credits);
-
-                // GENRES
-                List<Genre> genres = resolveGenres(dto.getGenreIds());
-
-                // LINK ALL RELATIONS
-                movie.setActors(actors);
-                movie.setDirectors(directors);
-                movie.setGenres(genres);
-
-                movieRepository.save(movie);
-
-                importedMovies++;
-                if (importedMovies >= movieCount) break;
+                if (results.size() >= movieCount) break;
             }
 
             page++;
         }
+
+        return results;
     }
 
+    private int getMovieRuntime(Long movieId) {
 
-    @Transactional
-    protected Movie importMovie(TmdbMovieDto dto) {
+        String url = tmdbMovieDetails + movieId + "?api_key=" + tmdbApiKey;
 
-        movieRepository.upsertMovie(
-                dto.getId(),
-                dto.getTitle(),
-                dto.getOverview(),
-                dto.getReleaseDate(),
-                dto.getOriginalLanguage(),
-                dto.getVoteAverage()
+        TmdbMovieDetailsDto movie = restTemplate.getForObject(
+                url,
+                TmdbMovieDetailsDto.class
         );
 
-        return movieRepository.findByTmdbId(dto.getId())
-                .orElseThrow(() ->
-                        new RuntimeException("Movie not found after upsert: " + dto.getId()));
-    }
-
-
-
-    private List<Actor> importActorsFromCredits(TmdbCreditsResponseDto credits) {
-
-        List<Actor> actors = new ArrayList<>();
-
-        if (credits.getCast() == null) {
-            return actors;
+        if (movie == null) {
+            throw new ResourceNotFound("Movie details not found");
         }
 
+        return movie.getRuntime();
+    }
+    // -------------------------
+    // STEP 2: SAVE MOVIES ONLY
+    // -------------------------
+    @Transactional
+    protected List<Movie> saveBasicMovies(List<TmdbMovieDto> dtos) {
+
+        List<Movie> movies = new ArrayList<>();
+
+        for (TmdbMovieDto dto : dtos) {
+
+            Movie movie = movieRepository.findByTmdbId(dto.getId())
+                    .orElseGet(Movie::new);
+
+            movie.setTmdbId(dto.getId());
+            movie.setTitle(dto.getTitle());
+            movie.setOverview(dto.getOverview());
+            movie.setReleaseDate(dto.getReleaseDate());
+            movie.setLanguage(dto.getOriginalLanguage());
+            movie.setAverageRating(dto.getVoteAverage());
+            movie.setRuntimeMinutes(getMovieRuntime(dto.getId()));
+
+            movies.add(movie);
+        }
+
+        return movieRepository.saveAll(movies);
+    }
+
+    private void enrichMovies(
+            List<Movie> movies,
+            ImportJob job
+    ) {
+
+        for (Movie movie : movies) {
+
+            try {
+
+                TmdbCreditsResponseDto credits =
+                        fetchCredits(movie.getTmdbId());
+
+                if (credits == null)
+                    continue;
+
+                movie.setActors(importActors(credits));
+                movie.setDirectors(importDirectors(credits));
+                movie.setGenres(resolveGenres());
+
+                movieRepository.save(movie);
+
+            } catch (Exception e) {
+
+                System.out.println(
+                        "Failed movie: " + movie.getTmdbId()
+                );
+            }
+
+            // -------------------------
+            // UPDATE PROGRESS
+            // -------------------------
+            job.setProcessedMovies(
+                    job.getProcessedMovies() + 1
+            );
+
+            importJobRepository.save(job);
+        }
+    }
+
+    // -------------------------
+    // CREDITS API
+    // -------------------------
+    private TmdbCreditsResponseDto fetchCredits(Long movieId) {
+
+        String url = tmdbCreditsUrl.replace("{movieId}", movieId.toString());
+
+        return restTemplate.getForObject(url, TmdbCreditsResponseDto.class);
+    }
+
+    // -------------------------
+    // ACTORS
+    // -------------------------
+    private List<Actor> importActors(TmdbCreditsResponseDto credits) {
+
+        List<Actor> actors = new ArrayList<>();
         Set<Long> seen = new HashSet<>();
+
+        if (credits.getCast() == null) return actors;
 
         for (TmdbActorDto dto : credits.getCast()) {
 
-            if (!seen.add(dto.getId())) {
-                continue;
-            }
+            if (dto.getId() == null) continue;
+            if (!seen.add(dto.getId())) continue;
 
-            Object[] row = (Object[]) actorRepository.upsertActor(
-                    dto.getId(),
-                    dto.getName()
-            );
+            actorRepository.upsertActor(dto.getId(), dto.getName());
 
-            Actor actor = new Actor();
-
-            actor.setId(((Number) row[0]).longValue());
-            actor.setTmdbId(((Number) row[1]).longValue());
-            actor.setName((String) row[2]);
-
-            actors.add(actor);
+            actorRepository.findByTmdbId(dto.getId())
+                    .ifPresent(actors::add);
         }
 
         return actors;
     }
 
-    @Transactional
-    protected List<Director> importDirectorsFromCredits(TmdbCreditsResponseDto credits) {
+    // -------------------------
+    // DIRECTORS
+    // -------------------------
+    private List<Director> importDirectors(TmdbCreditsResponseDto credits) {
 
         List<Director> directors = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
 
-        if (credits.getCrew() == null)
-            return directors;
-
-        Set<Long> processedDirectorIds = new HashSet<>();
+        if (credits.getCrew() == null) return directors;
 
         for (TmdbCrewMemberDto dto : credits.getCrew()) {
 
-            if (!"Director".equals(dto.getJob()))
-                continue;
+            if (!"Director".equals(dto.getJob())) continue;
+            if (dto.getId() == null) continue;
+            if (!seen.add(dto.getId())) continue;
 
-            if (dto.getId() == null)
-                continue;
+            directorRepository.upsertDirector(dto.getId(), dto.getName());
 
-            if (!processedDirectorIds.add(dto.getId())) {
-                continue;
-            }
-
-            directorRepository.upsertDirector(
-                    dto.getId(),
-                    dto.getName()
-            );
-
-            Director director = directorRepository.findByTmdbId(dto.getId())
-                    .orElseThrow(() ->
-                            new RuntimeException("Director not found after upsert: " + dto.getId()));
-
-            directors.add(director);
+            directorRepository.findByTmdbId(dto.getId())
+                    .ifPresent(directors::add);
         }
 
         return directors;
     }
 
-    private List<Genre> resolveGenres(List<Long> genreIds) {
+    // -------------------------
+    // GENRES
+    // -------------------------
+    private List<Genre> resolveGenres() {
 
         List<Genre> genres = new ArrayList<>();
 
-        if (genreIds == null) return genres;
+        List<TmdbGenreDto> tmdbGenres = getGenres().getGenres();
 
-        for (Long tmdbId : genreIds) {
+        for (TmdbGenreDto tmdbGenre : tmdbGenres) {
 
-            genreRepository.findByTmdbId(tmdbId)
-                    .ifPresent(genres::add);
+            var genreExists = genreRepository.findByTmdbId(tmdbGenre.getId());
+
+            if(genreExists.isPresent())
+                continue;
+
+            Genre genre = new Genre();
+
+            genre.setTmdbId(tmdbGenre.getId());
+            genre.setTitle(tmdbGenre.getName());
+
+            genres.add(genre);
         }
-
         return genres;
     }
-
 }
-
-

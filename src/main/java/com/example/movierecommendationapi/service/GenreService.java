@@ -88,4 +88,9 @@ public class GenreService {
 
         return responseGenres;
     }
+
+    public Genre getGenreEntityById(Long id) {
+        return genreRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Genre not found"));
+    }
 }

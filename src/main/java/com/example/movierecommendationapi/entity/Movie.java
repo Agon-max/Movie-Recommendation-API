@@ -44,6 +44,8 @@ public class Movie {
 
     private String releaseDate;
 
+    private Integer runtimeMinutes;
+
     @ManyToMany
     @JoinTable(
             name = "movie_actors",

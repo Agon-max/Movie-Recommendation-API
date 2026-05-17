@@ -68,6 +68,10 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
 
-
+    @PostMapping("/watchMovie/{movieId}") @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Watch a movie")
+    public void watchMovie(@RequestParam Long movieId, int movieMinutes){
+        userService.watchMovie(movieId, movieMinutes);
+    }
 }
 

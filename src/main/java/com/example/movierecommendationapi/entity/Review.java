@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -41,9 +42,9 @@ public class Review {
     @Column(columnDefinition = "TEXT")
     private String body;
 
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     // Prevents awarding points more than once per review
     private boolean pointsAwarded;

@@ -26,6 +26,7 @@ public class   User {
     private String password; // Store securely (hashed)
 
     private int totalPoints;
+    private boolean firstLogin = false;
 
     @ManyToMany
     @JoinTable(
@@ -47,9 +48,9 @@ public class   User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Redemption> redemptions;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Wallet> wallets;
-
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user" , cascade = CascadeType.ALL)
     private UserSurvey survey;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserPointHistory> user_point_history;
 }

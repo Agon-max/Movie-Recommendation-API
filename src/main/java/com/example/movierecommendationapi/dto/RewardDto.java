@@ -16,5 +16,6 @@ public class RewardDto {
     private int pointCost;
     private RewardType type;
     private BigDecimal monetaryValue;
+    private int stock;
     private boolean active;
 }

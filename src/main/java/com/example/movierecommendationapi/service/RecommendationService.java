@@ -1,27 +1,33 @@
 package com.example.movierecommendationapi.service;
 
 import com.example.movierecommendationapi.dto.MovieDto;
+import com.example.movierecommendationapi.entity.Genre;
 import com.example.movierecommendationapi.entity.Movie;
+import com.example.movierecommendationapi.entity.User;
+import com.example.movierecommendationapi.entity.WatchHistory;
 import com.example.movierecommendationapi.mapper.MovieMapper;
 import com.example.movierecommendationapi.repository.MovieRepository;
+import com.example.movierecommendationapi.repository.UserRepository;
+import com.example.movierecommendationapi.repository.WatchHistoryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class RecommendationService {
-    private final UserPreferencesService userPreferencesService;
+
     private final MovieRepository movieRepository;
-    private final TmdbService tmdbService;
+    private final UserRepository userRepository;
+    private final WatchHistoryRepository watchHistoryRepository;
+    private final MovieMapper movieMapper;
+
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final MovieMapper movieMapper;
 
     @Value("${openrouter.api-key:}")
     private String openRouterApiKey;
@@ -29,109 +35,160 @@ public class RecommendationService {
     @Value("${openrouter.base-url:https://openrouter.ai/api/v1}")
     private String openRouterBaseUrl;
 
-    public RecommendationService(UserPreferencesService userPreferencesService, MovieRepository movieRepository, TmdbService tmdbService, MovieMapper movieMapper) {
-        this.userPreferencesService = userPreferencesService;
+    public RecommendationService(
+            MovieRepository movieRepository,
+            UserRepository userRepository,
+            WatchHistoryRepository watchHistoryRepository,
+            MovieMapper movieMapper
+    ) {
         this.movieRepository = movieRepository;
+        this.userRepository = userRepository;
+        this.watchHistoryRepository = watchHistoryRepository;
+        this.movieMapper = movieMapper;
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
-        this.tmdbService = tmdbService;
-        this.movieMapper = movieMapper;
     }
 
-    public List<MovieDto> getRecommendations(Long userId, int count) {
-        // Check if user has preferences
-        var prefsOpt = userPreferencesService.getPreferencesByUserId(userId);
+    // =========================
+    // PUBLIC ENTRY POINT
+    // =========================
+    public List<MovieDto> getRecommendations(Long userId, int limit) {
 
-        if (prefsOpt.isEmpty()) {
-            // No preferences: return popular movies
-            System.out.println("No user preferences found. Returning popular movies.");
-            return movieRepository.findAll().stream()
-                    .limit(count)
-                    .map(m -> new MovieDto()) // Map to DTO (implement based on your mapper)
-                    .collect(Collectors.toList());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Movie> candidates = movieRepository.findTop500ByOrderByAverageRatingDesc();
+
+        Set<String> aiSuggestions = getAISuggestions(user, limit);
+
+        List<ScoredMovie> scored = new ArrayList<>();
+
+        for (Movie movie : candidates) {
+
+            double score = calculateScore(movie, user);
+
+            if (aiSuggestions.contains(movie.getTitle())) {
+                score += 5.0; // AI boost
+            }
+
+            scored.add(new ScoredMovie(movie, score));
         }
 
-        var prefs = prefsOpt.get();
-        String prompt = buildPrompt(prefs, count);
+        return scored.stream()
+                .sorted((a, b) -> Double.compare(b.score, a.score))
+                .limit(limit)
+                .map(sm -> movieMapper.toDto(sm.movie))
+                .toList();
+    }
 
-        // Call OpenRouter AI
+    // =========================
+    // SCORING ENGINE
+    // =========================
+    private double calculateScore(Movie movie, User user) {
+
+        double score = 0;
+
+        Set<Long> preferredGenres = getPreferredGenres(user);
+
+        for (Genre genre : movie.getGenres()) {
+            if (preferredGenres.contains(genre.getId())) {
+                score += 3.0;
+            }
+        }
+
+        if (watchedSimilar(user, movie)) {
+            score += 2.5;
+        }
+
+        if (movie.getAverageRating() != null) {
+            score += movie.getAverageRating() / 2.0;
+        }
+
+        return score;
+    }
+
+    private Set<Long> getPreferredGenres(User user) {
+
+        return watchHistoryRepository
+                .findByUserAndCompletedTrue(user)
+                .stream()
+                .flatMap(w -> w.getMovie().getGenres().stream())
+                .map(Genre::getId)
+                .collect(Collectors.toSet());
+    }
+
+    private boolean watchedSimilar(User user, Movie movie) {
+
+        return watchHistoryRepository
+                .findByUserAndCompletedTrue(user)
+                .stream()
+                .anyMatch(w ->
+                        w.getMovie().getGenres().stream()
+                                .anyMatch(g ->
+                                        movie.getGenres().contains(g)
+                                )
+                );
+    }
+
+    // =========================
+    // AI LAYER (CANDIDATE GENERATION)
+    // =========================
+    private Set<String> getAISuggestions(User user, int limit) {
+
         if (openRouterApiKey == null || openRouterApiKey.isEmpty()) {
-            System.out.println("OpenRouter API key not configured. Returning popular movies as fallback.");
-            return tmdbService.getPopularMovies()
-                    .getResults()
-                    .stream()
-                    .map(movieMapper::toMovie)
-                    .map(movieMapper::toDto)
-                    .collect(Collectors.toList());
+            return Set.of();
         }
 
         try {
-            String aiResponse = callOpenRouter(prompt);
-            List<String> movieTitles = parseAIResponse(aiResponse);
-            return queryMoviesByTitles(movieTitles, count);
+
+            String prompt =
+                    "Return ONLY a JSON array of movie titles (no explanation). " +
+                            "Base recommendations on user preferences and watch history. " +
+                            "Limit: " + limit;
+
+            String response = callOpenRouter(prompt);
+
+            List<String> titles =
+                    objectMapper.readValue(response, List.class);
+
+            return new HashSet<>(titles);
+
         } catch (Exception e) {
-            System.out.println("Error calling OpenRouter: " + e.getMessage());
-            // If not possible to retrieve recommendations, return popular movies
-            return tmdbService.getPopularMovies()
-                    .getResults()
-                    .stream()
-                    .map(movieMapper::toMovie)
-                    .map(movieMapper::toDto)
-                    .collect(Collectors.toList());
+            return Set.of();
         }
     }
 
-    private String buildPrompt(com.example.movierecommendationapi.dto.UserPreferencesDto prefs, int count) {
-        return "Based on the following user preferences, recommend " + count + " movies. Return only movie titles separated by commas. " +
-                "Survey: " + prefs.getSurveySummary() + ". " +
-                "Watch history: " + prefs.getWatchHistorySummary() + ". " +
-                "Return format: title1, title2, title3...";
-    }
+    private String callOpenRouter(String prompt) {
 
-    private String callOpenRouter(String prompt) throws Exception {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + openRouterApiKey);
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> request = new HashMap<>();
 
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "openai/gpt-3.5-turbo");
-        requestBody.put("messages", List.of(
+        request.put("model", "openai/gpt-3.5-turbo");
+        request.put("messages", List.of(
                 Map.of("role", "user", "content", prompt)
         ));
-        requestBody.put("max_tokens", 200);
 
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-        Map<String, Object> response = restTemplate.postForObject(
+        Map response = restTemplate.postForObject(
                 openRouterBaseUrl + "/chat/completions",
-                entity,
+                request,
                 Map.class
         );
 
-        if (response == null || !response.containsKey("choices")) {
-            throw new RuntimeException("Invalid OpenRouter response");
-        }
+        List choices = (List) response.get("choices");
+        Map message = (Map) ((Map) choices.get(0)).get("message");
 
-        List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-        Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
         return (String) message.get("content");
     }
 
-    private List<String> parseAIResponse(String response) {
-        return Arrays.stream(response.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
-    }
+    // =========================
+    // INTERNAL STRUCT
+    // =========================
+    private static class ScoredMovie {
+        Movie movie;
+        double score;
 
-    private List<MovieDto> queryMoviesByTitles(List<String> titles, int limit) {
-        return titles.stream()
-                .limit(limit)
-                .map(title -> movieRepository.getMovieByTitle(title, org.springframework.data.domain.Pageable.unpaged())
-                        .stream()
-                        .findFirst()
-                        .orElse(null))
-                .filter(Objects::nonNull)
-                .map(movieMapper::toDto)
-                .collect(Collectors.toList());
+        ScoredMovie(Movie movie, double score) {
+            this.movie = movie;
+            this.score = score;
+        }
     }
 }

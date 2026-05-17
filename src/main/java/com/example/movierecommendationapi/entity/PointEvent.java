@@ -29,5 +29,5 @@ public class PointEvent {
     private String description;
 
     // Allows disabling an event without deleting it
-    private boolean active;
+    private boolean active = true;
 }

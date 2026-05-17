@@ -16,12 +16,10 @@ public class ActorService {
 
     private final ActorRepository actorRepository;
     private final ActorMapper actorMapper;
-    private final MovieService movieService;
 
-    public ActorService(ActorRepository actorRepository, ActorMapper actorMapper, MovieService movieService) {
+    public ActorService(ActorRepository actorRepository, ActorMapper actorMapper) {
         this.actorRepository = actorRepository;
         this.actorMapper = actorMapper;
-        this.movieService = movieService;
     }
 
     // Check if actor exists
@@ -29,22 +27,7 @@ public class ActorService {
         return actorRepository.existsById(id);
     }
 
-    public List<ActorDto> getAllActorsByMovie(Long movieId, String movieTitle) {
 
-        if (movieId != null && !movieService.movieExists(movieId)) {
-            throw new ResourceNotFound("Movie not found!");
-        }
-
-        if ((movieId == null) && (movieTitle == null || movieTitle.isBlank())) {
-            throw new IllegalArgumentException("At least one filter must be provided");
-        }
-
-        var actors = actorRepository.getActorsByMovie(movieId, movieTitle);
-
-        return actors.stream()
-                .map(actorMapper::toDto)
-                .collect(Collectors.toList());
-    }
 
     // Get actor by Id
     public ActorDto getActorById(Long id) {
@@ -79,5 +62,11 @@ public class ActorService {
             throw new ResourceNotFound("Actor not found!");
         }
         actorRepository.deleteById(id);
+    }
+
+    public Actor getActorEntitiesByIds(Long id) {
+        return actorRepository.findById(id).orElseThrow(
+                () ->(new RuntimeException("Actor not found"))
+        );
     }
 }

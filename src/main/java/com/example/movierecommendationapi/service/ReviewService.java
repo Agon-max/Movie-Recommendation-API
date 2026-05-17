@@ -2,6 +2,7 @@ package com.example.movierecommendationapi.service;
 
 import com.example.movierecommendationapi.dto.ReviewDto;
 import com.example.movierecommendationapi.entity.Review;
+import com.example.movierecommendationapi.entity.enums.PointEventType;
 import com.example.movierecommendationapi.mapper.MovieMapper;
 import com.example.movierecommendationapi.mapper.ReviewMapper;
 import com.example.movierecommendationapi.mapper.UserMapper;
@@ -17,14 +18,16 @@ public class ReviewService {
     private final MovieMapper movieMapper;
     private final ReviewRepository reviewRepository;
     private final ReviewMapper reviewMapper;
+    private final PointService pointService;
 
-    public ReviewService(MovieService movieService, UserService userService, UserMapper userMapper, MovieMapper movieMapper, ReviewRepository reviewRepository, ReviewMapper reviewMapper) {
+    public ReviewService(MovieService movieService, UserService userService, UserMapper userMapper, MovieMapper movieMapper, ReviewRepository reviewRepository, ReviewMapper reviewMapper, PointService pointService) {
         this.movieService = movieService;
         this.userService = userService;
         this.userMapper = userMapper;
         this.movieMapper = movieMapper;
         this.reviewRepository = reviewRepository;
         this.reviewMapper = reviewMapper;
+        this.pointService = pointService;
     }
 
     public ReviewDto createReview(ReviewDto reviewDto)
@@ -47,8 +50,13 @@ public class ReviewService {
         review.setTitle(reviewDto.getTitle());
         review.setRating_score(reviewDto.getRating_score());
         review.setBody(reviewDto.getBody());
+        review.setCreatedAt(reviewDto.getCreatedAt());
+        review.setUpdatedAt(reviewDto.getUpdatedAt());
+        review.setPointsAwarded(true);
 
         reviewRepository.save(review);
+
+        pointService.awardPoints(review.getUser(), PointEventType.WRITE_REVIEW);
 
         return reviewMapper.toDto(review);
     }

@@ -2,6 +2,7 @@ package com.example.movierecommendationapi.controller;
 
 import com.example.movierecommendationapi.dto.MovieDto;
 import com.example.movierecommendationapi.service.MovieService;
+import com.example.movierecommendationapi.service.TmdbImportService;
 import com.example.movierecommendationapi.service.TmdbService;
 import com.example.movierecommendationapi.wrapper.TmdbMovieResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,7 +32,7 @@ public class MovieController{
 
    @PostMapping @ResponseStatus(HttpStatus.CREATED)
    @Operation(summary = "Create a new movie")
-   public MovieDto saveMovie(MovieDto movieDto){
+   public MovieDto saveMovie(@RequestBody MovieDto movieDto){
         return movieService.createMovie(movieDto);
    }
 
@@ -59,12 +61,6 @@ public class MovieController{
    @Operation(summary = "Delete a movie")
    public boolean deleteMovie(@PathVariable long id){
         return movieService.deleteMovie(id);
-   }
-
-   @GetMapping("/popular")
-   @Operation(summary = "Get popular movies")
-   public ResponseEntity<TmdbMovieResponseDto> getPopularMovies(@RequestParam(defaultValue = "1") int page){
-        return ResponseEntity.ok(tmdbService.getPopularMovies());
    }
 
 }

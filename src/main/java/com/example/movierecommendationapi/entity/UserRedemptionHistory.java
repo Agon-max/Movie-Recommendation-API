@@ -1,6 +1,5 @@
 package com.example.movierecommendationapi.entity;
 
-import com.example.movierecommendationapi.entity.enums.RedemptionStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,13 +9,12 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "redemptions")
+@Table(name = "user_redmeption_history")
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class Redemption {
-
+public class UserRedemptionHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,12 +27,9 @@ public class Redemption {
     @JoinColumn(name = "reward_id", nullable = false)
     private Reward reward;
 
-    // Snapshot of point cost at time of redemption
+    private String reason;
+
+    private LocalDateTime createdAt;
+
     private int pointsSpent;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private RedemptionStatus status;
-
-    private LocalDateTime redeemedAt;
 }

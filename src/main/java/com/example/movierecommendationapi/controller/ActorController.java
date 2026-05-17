@@ -32,12 +32,7 @@ public class ActorController {
         return ResponseEntity.ok(actorService.getActorById(id));
     }
 
-    // Get all actors
-    @GetMapping
-    @Operation(summary = "Get all actors based on movie id and title")
-    public ResponseEntity<List<ActorDto>> getAllActorsByMovie(Long movieId, String movieTitle) {
-        return ResponseEntity.ok(actorService.getAllActorsByMovie(movieId, movieTitle));
-    }
+
 
     // Create a new actor
     @PostMapping

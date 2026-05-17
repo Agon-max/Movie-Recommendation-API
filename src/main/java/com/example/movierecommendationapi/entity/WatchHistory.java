@@ -37,9 +37,9 @@ public class WatchHistory {
     // Prevents awarding points more than once for the same movie
     private boolean pointsAwarded;
 
-    private int number_points_awarded;
+    private int pointsAwardedInNumbers;
 
-    private Duration movie_progress;
+    private boolean completed;
 
-    private int movie_progress_percentage;
+    private Integer watchedMinutes;
 }
