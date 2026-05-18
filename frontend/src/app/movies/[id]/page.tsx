@@ -33,6 +33,7 @@ interface MoviePageProps {
 
 export default function MovieDetailPage({ params }: MoviePageProps) {
   const { id } = use(params);
+  const { tmdbId } = use(params);
   const { user, isAuthenticated, refreshUser } = useAuth();
   const [movie, setMovie] = useState<Movie | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -45,14 +46,14 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
 
-  const fetchMovie = useCallback(async () => {
-    try {
-      const data = await movieService.getMovieById(Number(id));
-      setMovie(data);
-    } catch (error) {
-      console.error("Failed to fetch movie:", error);
-    }
-  }, [id]);
+ const fetchMovie = useCallback(async () => {
+   try {
+     const data = await movieService.getMovieByTmdbId(Number(tmdbId));
+     setMovie(data);
+   } catch (error) {
+     console.error("Failed to fetch movie:", error);
+   }
+ }, [tmdbId]);
 
   const fetchReviews = useCallback(async () => {
     try {

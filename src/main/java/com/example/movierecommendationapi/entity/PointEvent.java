@@ -23,6 +23,9 @@ public class PointEvent {
     @Column(unique = true, nullable = false)
     private PointEventType eventType;
 
+    @ManyToOne
+    private User user;
+
     // How many points this event awards
     private int pointsAwarded;
 

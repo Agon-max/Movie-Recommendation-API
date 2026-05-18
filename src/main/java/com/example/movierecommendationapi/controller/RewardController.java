@@ -1,5 +1,6 @@
 package com.example.movierecommendationapi.controller;
 
+import com.example.movierecommendationapi.dto.RewardDto;
 import com.example.movierecommendationapi.entity.Reward;
 import com.example.movierecommendationapi.service.RewardService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,10 +27,11 @@ public class RewardController {
     // =========================
     @PostMapping
     @Operation(summary = "Create a new reward")
-    public ResponseEntity<Reward> createReward(
-            @RequestBody Reward reward
+    public ResponseEntity<RewardDto> createReward(
+            @RequestBody RewardDto reward
     ) {
-        Reward createdReward = rewardService.createReward(reward);
+        RewardDto createdReward = rewardService.createReward(
+                reward);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -41,9 +43,9 @@ public class RewardController {
     // =========================
     @GetMapping
     @Operation(summary = "Get all rewards")
-    public ResponseEntity<List<Reward>> getAllRewards() {
+    public ResponseEntity<List<RewardDto>> getAllRewards() {
 
-        List<Reward> rewards = rewardService.getAllRewards();
+        List<RewardDto> rewards = rewardService.getAllRewards();
 
         return ResponseEntity.ok(rewards);
     }
@@ -53,10 +55,10 @@ public class RewardController {
     // =========================
     @GetMapping("/{id}")
     @Operation(summary = "Get reward by id")
-    public ResponseEntity<Reward> getRewardById(
+    public ResponseEntity<RewardDto> getRewardById(
             @PathVariable Long id
     ) {
-        Reward reward = rewardService.getRewardById(id);
+        RewardDto reward = rewardService.getRewardById(id);
 
         return ResponseEntity.ok(reward);
     }
@@ -66,11 +68,11 @@ public class RewardController {
     // =========================
     @PutMapping("/{id}")
     @Operation(summary = "Update reward")
-    public ResponseEntity<Reward> updateReward(
+    public ResponseEntity<RewardDto> updateReward(
             @PathVariable Long id,
-            @RequestBody Reward updatedReward
+            @RequestBody RewardDto updatedReward
     ) {
-        Reward reward = rewardService.updateReward(id, updatedReward);
+        RewardDto reward = rewardService.updateReward(id, updatedReward);
 
         return ResponseEntity.ok(reward);
     }
@@ -93,9 +95,9 @@ public class RewardController {
     // =========================
     @GetMapping("/active")
     @Operation(summary = "Get all active rewards")
-    public ResponseEntity<List<Reward>> getActiveRewards() {
+    public ResponseEntity<List<RewardDto>> getActiveRewards() {
 
-        List<Reward> rewards = rewardService.getActiveRewards();
+        List<RewardDto> rewards = rewardService.getActiveRewards();
 
         return ResponseEntity.ok(rewards);
     }

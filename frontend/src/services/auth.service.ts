@@ -3,6 +3,7 @@ import type { LoginRequest, LoginResponse, RegisterRequest, User } from "@/types
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
+    debugger;
     const response = await api.post<LoginResponse>("/auth/login", credentials);
     const data = response.data;
     

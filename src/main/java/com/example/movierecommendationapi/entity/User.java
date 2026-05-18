@@ -53,4 +53,7 @@ public class   User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<UserPointHistory> user_point_history;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<PointEvent> point_events;
 }

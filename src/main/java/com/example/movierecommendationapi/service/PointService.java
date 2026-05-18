@@ -25,9 +25,8 @@ public class PointService {
     }
 
     public void awardPoints(User user, PointEventType eventType) {
-
-        // TODO Then test and build ui
         PointEvent event = new PointEvent();
+        event.setUser(user);
         int pointsToAward;
 
         if (!event.isActive()) {
@@ -38,18 +37,24 @@ public class PointService {
         switch (eventType) {
 
             case FIRST_LOGIN -> {
-                pointsToAward = 20;
+                if(user.isFirstLogin()) {
+                    pointsToAward = 20;
 
-                user.setTotalPoints(
-                        user.getTotalPoints() + pointsToAward
-                );
+                    user.setTotalPoints(
+                            user.getTotalPoints() + pointsToAward
+                    );
 
-                event.setPointsAwarded(pointsToAward);
-                event.setDescription(
-                        "The user with username " + user.getUsername()
-                                + " has logged in for the first time!"
-                );
-                event.setEventType(eventType);
+
+                    event.setPointsAwarded(pointsToAward);
+                    event.setDescription(
+                            "The user with username " + user.getUsername()
+                                    + " has logged in for the first time!"
+                    );
+                    event.setEventType(eventType);
+                    user.setFirstLogin(true);
+                }
+
+                return;
             }
 
             case WRITE_REVIEW -> {

@@ -1,68 +1,75 @@
 package com.example.movierecommendationapi.service;
 
+import com.example.movierecommendationapi.dto.RewardDto;
 import com.example.movierecommendationapi.entity.Reward;
 import com.example.movierecommendationapi.error.ResourceNotFound;
+import com.example.movierecommendationapi.mapper.RewardMapper;
 import com.example.movierecommendationapi.repository.RewardRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RewardService {
 
     private final RewardRepository rewardRepository;
+    private final RewardMapper rewardMapper;
 
-    public RewardService(RewardRepository rewardRepository) {
+    public RewardService(RewardRepository rewardRepository, RewardMapper rewardMapper) {
         this.rewardRepository = rewardRepository;
+        this.rewardMapper = rewardMapper;
     }
 
-    public Reward createReward(Reward reward) {
-
-        return rewardRepository.save(reward);
+    public RewardDto createReward(RewardDto rewardDto) {
+        Reward reward = rewardMapper.toEntity(rewardDto);
+        Reward savedReward = rewardRepository.save(reward);
+        return rewardMapper.toDto(savedReward);
     }
 
-    public List<Reward> getAllRewards() {
-
-        return rewardRepository.findAll();
+    public List<RewardDto> getAllRewards() {
+        return rewardRepository.findAll().stream()
+                .map(rewardMapper::toDto)
+                .collect(Collectors.toList());
     }
 
-    public Reward getRewardById(Long id) {
-
-        return rewardRepository.findById(id)
+    public RewardDto getRewardById(Long id) {
+        Reward reward = rewardRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFound("Reward not found with id: " + id));
+        return rewardMapper.toDto(reward);
     }
 
-    public Reward updateReward(Long id, Reward updatedReward) {
-
+    public RewardDto updateReward(Long id, RewardDto updatedRewardDto) {
         Reward existingReward = rewardRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFound("Reward not found with id: " + id));
 
-        existingReward.setName(updatedReward.getName());
-        existingReward.setDescription(updatedReward.getDescription());
-        existingReward.setPointCost(updatedReward.getPointCost());
-        existingReward.setType(updatedReward.getType());
-        existingReward.setMonetaryValue(updatedReward.getMonetaryValue());
-        existingReward.setActive(updatedReward.isActive());
-        existingReward.setStock(updatedReward.getStock());
+        // Update fields from DTO to entity
+        existingReward.setName(updatedRewardDto.getName());
+        existingReward.setDescription(updatedRewardDto.getDescription());
+        existingReward.setPointCost(updatedRewardDto.getPointCost());
+        existingReward.setType(updatedRewardDto.getType());
+        existingReward.setMonetaryValue(updatedRewardDto.getMonetaryValue());
+        existingReward.setActive(updatedRewardDto.isActive());
+        existingReward.setStock(updatedRewardDto.getStock());
 
-        return rewardRepository.save(existingReward);
+        Reward savedReward = rewardRepository.save(existingReward);
+        return rewardMapper.toDto(savedReward);
     }
 
 
     public void deleteReward(Long id) {
-
         Reward reward = rewardRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFound("Reward not found with id: " + id));
-
         rewardRepository.delete(reward);
     }
 
 
-    public List<Reward> getActiveRewards() {
-
-        return rewardRepository.findByActiveTrue();
+    public List<RewardDto> getActiveRewards() {
+        return rewardRepository.findByActiveTrue().stream()
+                .map(rewardMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

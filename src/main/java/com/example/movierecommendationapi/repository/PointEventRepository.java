@@ -12,4 +12,6 @@ import java.util.Optional;
 @Repository
 public interface PointEventRepository extends JpaRepository<PointEvent, Long>, PointEventRepositoryCustom {
     Optional<PointEvent> findByEventType(PointEventType eventType);
+    boolean existsByUserIdAndEventType(Long id, PointEventType pointEventType);
+
 }
