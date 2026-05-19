@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "point_events")
 @Getter
@@ -20,17 +22,28 @@ public class PointEvent {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private PointEventType eventType;
 
     @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
     // How many points this event awards
     private int pointsAwarded;
 
+    @Column(length = 500)
     private String description;
+
+    private LocalDateTime createdAt;
 
     // Allows disabling an event without deleting it
     private boolean active = true;
+
+    @PrePersist
+    void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

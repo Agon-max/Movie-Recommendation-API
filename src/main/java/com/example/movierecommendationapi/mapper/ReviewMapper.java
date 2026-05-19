@@ -1,5 +1,6 @@
 package com.example.movierecommendationapi.mapper;
 
+import com.example.movierecommendationapi.dto.ReviewCreateDto;
 import com.example.movierecommendationapi.dto.ReviewDto;
 import com.example.movierecommendationapi.entity.Review;
 import org.mapstruct.Mapper;
@@ -13,8 +14,11 @@ public interface ReviewMapper {
     @Mapping(source = "movie.id", target = "movieId")
     ReviewDto toDto(Review review);
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "movie", ignore = true)
-    Review toEntity(ReviewDto reviewDto);
-
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "pointsAwarded", ignore = true)
+    Review toEntity(ReviewCreateDto dto);
 }
