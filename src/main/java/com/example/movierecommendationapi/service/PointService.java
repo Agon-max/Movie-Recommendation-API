@@ -33,7 +33,6 @@ public class PointService {
             return;
         }
 
-
         switch (eventType) {
 
             case FIRST_LOGIN -> {
@@ -51,10 +50,11 @@ public class PointService {
                                     + " has logged in for the first time!"
                     );
                     event.setEventType(eventType);
-                    user.setFirstLogin(true);
+                    user.setFirstLogin(false);
+                }else{
+                    return;
                 }
 
-                return;
             }
 
             case WRITE_REVIEW -> {

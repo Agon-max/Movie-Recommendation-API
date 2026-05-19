@@ -18,14 +18,14 @@ public class AuthService {
     private final JwtTokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final PointService pointService;
-    private final PointEventRepository eventRepo;
+    private final PointEventRepository pointEventRepository;
 
     public AuthService(UserRepository userRepository, JwtTokenProvider tokenProvider, PasswordEncoder passwordEncoder, PointService pointService, PointEventRepository eventRepo) {
         this.userRepository = userRepository;
         this.tokenProvider = tokenProvider;
         this.passwordEncoder = passwordEncoder;
         this.pointService = pointService;
-        this.eventRepo = eventRepo;
+        this.pointEventRepository = eventRepo;
     }
 
     public LoginResponse login(LoginRequest loginRequest) {
@@ -35,7 +35,7 @@ public class AuthService {
             throw new ResourceNotFound("User does not exist");
         }
 
-        if (!eventRepo.existsByUserIdAndEventType(user.getId(), PointEventType.FIRST_LOGIN)) {
+        if(!pointEventRepository.existsByUserIdAndEventType(user.getId(), PointEventType.FIRST_LOGIN)){
             pointService.awardPoints(user, PointEventType.FIRST_LOGIN);
         }
 

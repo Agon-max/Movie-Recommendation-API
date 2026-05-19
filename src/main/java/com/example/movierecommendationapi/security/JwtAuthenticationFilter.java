@@ -1,5 +1,6 @@
 package com.example.movierecommendationapi.security;
 
+import com.example.movierecommendationapi.service.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,8 +15,10 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
+    private final CustomUserDetailsService customUserDetailsService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, CustomUserDetailsService customUserDetailsService) {
+        this.customUserDetailsService = customUserDetailsService;
         this.tokenProvider = tokenProvider;
     }
 
@@ -38,14 +41,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = extractToken(request);
-        
+
         if (token != null && tokenProvider.validateToken(token)) {
+
             String username = tokenProvider.extractUsername(token);
-            UsernamePasswordAuthenticationToken authentication = 
-                    new UsernamePasswordAuthenticationToken(username, null, List.of());
+
+            CustomUserDetails userDetails =
+                    (CustomUserDetails) customUserDetailsService.loadUserByUsername(username);
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-
         filterChain.doFilter(request, response);
     }
 

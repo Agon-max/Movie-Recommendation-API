@@ -33,20 +33,18 @@ public class ReviewService {
     public ReviewDto createReview(ReviewDto reviewDto)
     {
         var review = new Review();
+
         if(reviewDto.getMovieId() == null || reviewDto.getUserId() == null) {
             throw new IllegalArgumentException("Movie ID and User ID cannot be null!");
         }
-        var movieToSet = movieService.getMovieById(reviewDto.getMovieId());
-        var userToSet = userService.getUserById(reviewDto.getUserId());
-        if(movieToSet == null){
-            throw new IllegalArgumentException("Movie cannot be null!");
-        }
-        if(userToSet == null){
-            throw new IllegalArgumentException("User cannot be null!");
-        }
 
-        review.setMovie(movieMapper.toEntity(movieToSet));
-        review.setUser(userMapper.toEntity(userToSet));
+        var movieToSet = movieService.getMovieEntityById(reviewDto.getMovieId());
+
+        var userToSet = userService.getUserByEntityId(reviewDto.getUserId());
+
+        review.setMovie(movieToSet);
+        review.setUser(userToSet);
+
         review.setTitle(reviewDto.getTitle());
         review.setRating_score(reviewDto.getRating_score());
         review.setBody(reviewDto.getBody());

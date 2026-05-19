@@ -135,4 +135,9 @@ public class UserService {
 
         historyRepository.save(history);
     }
+
+    public User getUserByEntityId(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFound("User not found"));
+    }
 }

@@ -35,6 +35,7 @@ public class MovieService {
         this.directorRepository = directorRepository;
     }
 
+    @Transactional
     public MovieDto createMovie(MovieDto movieDto) {
 
         Movie movie = new Movie();
@@ -179,7 +180,9 @@ public class MovieService {
         movieRepository.delete(movieMapper.toEntity(movie));
         return true;
     }
-
-
+    public Movie getMovieEntityById(Long id) {
+        return movieRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFound("Movie not found!"));
+    }
 
 }

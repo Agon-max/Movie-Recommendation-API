@@ -46,7 +46,7 @@ public class Movie {
 
     private Integer runtimeMinutes;
 
-    @ManyToMany
+    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(
             name = "movie_actors",
             joinColumns = @JoinColumn(name = "movie_id"),

@@ -26,7 +26,7 @@ public class   User {
     private String password; // Store securely (hashed)
 
     private int totalPoints;
-    private boolean firstLogin = false;
+    private boolean firstLogin = true;
 
     @ManyToMany
     @JoinTable(
