@@ -16,8 +16,12 @@ export function MovieCard({ movie, className }: MovieCardProps) {
     ? `https://image.tmdb.org/t/p/w500${movie.posterPath}`
     : "/placeholder-movie.jpg";
 
+  const href = movie.id != null
+    ? `/movies/${movie.id}`
+    : `/movies/by-tmdb/${movie.tmdbId}`;
+
   return (
-    <Link href={`/movies/${movie.tmdbId}`}>
+    <Link href={href}>
       <div
         className={cn(
           "movie-card group relative rounded-lg overflow-hidden bg-card cursor-pointer",

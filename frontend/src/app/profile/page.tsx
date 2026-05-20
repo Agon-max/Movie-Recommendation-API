@@ -44,6 +44,7 @@ export default function ProfilePage() {
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [hasSurvey, setHasSurvey] = useState(false);
+  const [watchCount, setWatchCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -57,19 +58,21 @@ export default function ProfilePage() {
       if (!user) return;
       setIsLoading(true);
       try {
-        const [historyData, rewardsData, reviewsData, redemptionData, surveyData] =
+        const [historyData, rewardsData, reviewsData, redemptionData, surveyData, watchCountData] =
           await Promise.all([
             userService.getPointHistory(user.id).catch(() => []),
             rewardService.getActiveRewards().catch(() => []),
             reviewService.getReviewsByUser(user.id).catch(() => []),
             redemptionService.getUserRedemptions(user.id).catch(() => []),
             surveyService.getSurvey(user.id).catch(() => null),
+            userService.getWatchCount(user.id).catch(() => 0),
           ]);
         setPointHistory(historyData);
         setRewards(rewardsData);
         setUserReviews(reviewsData);
         setRedemptions(redemptionData);
         setHasSurvey(Boolean(surveyData?.exists));
+        setWatchCount(watchCountData);
       } finally {
         setIsLoading(false);
       }
@@ -77,10 +80,7 @@ export default function ProfilePage() {
     if (user) fetchData();
   }, [user]);
 
-  const watches = useMemo(
-    () => pointHistory.filter((p) => p.eventType === "WATCH_MOVIE").length,
-    [pointHistory]
-  );
+  const watches = watchCount;
 
   const affordableRewards = useMemo(() => {
     if (!user) return [] as Reward[];

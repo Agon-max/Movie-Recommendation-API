@@ -92,6 +92,7 @@ public class MovieService {
         response.setAverageRating(savedMovie.getAverageRating());
         response.setPosterPath(savedMovie.getPosterPath());
         response.setBackdropPath(savedMovie.getBackdropPath());
+        response.setRuntimeMinutes(savedMovie.getRuntimeMinutes());
 
         response.setActorIds(
                 savedMovie.getActors()
@@ -136,6 +137,7 @@ public class MovieService {
 
         MovieDto dto = new MovieDto();
 
+        dto.setId(movie.getId());
         dto.setTmdbId(movie.getTmdbId());
         dto.setTitle(movie.getTitle());
         dto.setOverview(movie.getOverview());
@@ -144,6 +146,7 @@ public class MovieService {
         dto.setAverageRating(movie.getAverageRating());
         dto.setPosterPath(movie.getPosterPath());
         dto.setBackdropPath(movie.getBackdropPath());
+        dto.setRuntimeMinutes(movie.getRuntimeMinutes());
 
         dto.setActorIds(
                 movie.getActors()

@@ -4,6 +4,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { ToastProvider } from "@/components/ui/toast";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { WelcomeBonusModal } from "@/components/rewards/welcome-bonus-modal";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -45,6 +46,7 @@ export default function RootLayout({
             <Navbar />
             <main className="flex-1 pt-16">{children}</main>
             <Footer />
+            <WelcomeBonusModal />
           </ToastProvider>
         </AuthProvider>
       </body>

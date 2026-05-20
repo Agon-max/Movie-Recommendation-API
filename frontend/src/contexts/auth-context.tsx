@@ -9,6 +9,8 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  welcomeBonus: number | null;
+  clearWelcomeBonus: () => void;
   login: (credentials: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
@@ -20,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [welcomeBonus, setWelcomeBonus] = useState<number | null>(null);
 
   const refreshUser = useCallback(async () => {
     const currentUser = authService.getCurrentUser();
@@ -49,6 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await authService.login(credentials);
     const fullUser = await userService.getUserById(response.userId);
     setUser(fullUser);
+    if (response.firstLoginBonus > 0) {
+      setWelcomeBonus(response.firstLoginBonus);
+    }
   };
 
   const register = async (data: RegisterRequest) => {
@@ -58,7 +64,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     authService.logout();
     setUser(null);
+    setWelcomeBonus(null);
   };
+
+  const clearWelcomeBonus = useCallback(() => setWelcomeBonus(null), []);
 
   return (
     <AuthContext.Provider
@@ -66,6 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isLoading,
         isAuthenticated: !!user,
+        welcomeBonus,
+        clearWelcomeBonus,
         login,
         register,
         logout,

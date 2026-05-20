@@ -30,17 +30,20 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest loginRequest) {
         User user = userRepository.findByUsername(loginRequest.getUsername());
-        
+
         if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new ResourceNotFound("User does not exist");
         }
 
-        if(!pointEventRepository.existsByUserIdAndEventType(user.getId(), PointEventType.FIRST_LOGIN)){
+        int firstLoginBonus = 0;
+        if (!pointEventRepository.existsByUserIdAndEventType(user.getId(), PointEventType.FIRST_LOGIN)) {
+            int before = user.getTotalPoints();
             pointService.awardPoints(user, PointEventType.FIRST_LOGIN);
+            firstLoginBonus = Math.max(0, user.getTotalPoints() - before);
         }
 
         String token = tokenProvider.generateToken(user.getUsername());
-        return new LoginResponse(token, user.getUsername(), user.getId());
+        return new LoginResponse(token, user.getUsername(), user.getId(), firstLoginBonus);
     }
 
     public User registerUser(String username, String email, String password) {

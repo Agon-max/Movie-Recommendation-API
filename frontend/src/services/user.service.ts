@@ -1,5 +1,11 @@
 import api from "@/lib/api";
-import type { User, PointHistory, LeaderboardEntry } from "@/types";
+import type {
+  User,
+  PointHistory,
+  LeaderboardEntry,
+  WatchMovieResponse,
+  WatchStatus,
+} from "@/types";
 
 export const userService = {
   async getUserById(id: number): Promise<User> {
@@ -21,10 +27,18 @@ export const userService = {
     await api.delete(`/users/${id}`);
   },
 
-  async watchMovie(movieId: number, movieMinutes: number): Promise<void> {
-    await api.post(`/users/watchMovie/${movieId}`, null, {
-      params: { movieId, movieMinutes },
-    });
+  async watchMovie(movieId: number, movieMinutes: number): Promise<WatchMovieResponse> {
+    const response = await api.post<WatchMovieResponse>(
+      `/users/watchMovie/${movieId}`,
+      null,
+      { params: { movieMinutes } }
+    );
+    return response.data;
+  },
+
+  async getWatchStatus(movieId: number): Promise<WatchStatus> {
+    const response = await api.get<WatchStatus>(`/users/watchMovie/${movieId}`);
+    return response.data;
   },
 
   async getPointHistory(userId: number): Promise<PointHistory[]> {
@@ -33,6 +47,15 @@ export const userService = {
       return response.data;
     } catch {
       return [];
+    }
+  },
+
+  async getWatchCount(userId: number): Promise<number> {
+    try {
+      const response = await api.get<number>(`/users/${userId}/watches/count`);
+      return response.data;
+    } catch {
+      return 0;
     }
   },
 

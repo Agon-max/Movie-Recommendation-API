@@ -24,6 +24,7 @@ import {
   Loader2,
   User,
   Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import type { Movie, Review } from "@/types";
 
@@ -42,6 +43,7 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isWatching, setIsWatching] = useState(false);
+  const [watchCompleted, setWatchCompleted] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewTitle, setReviewTitle] = useState("");
   const [reviewBody, setReviewBody] = useState("");
@@ -66,21 +68,55 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
     }
   }, [movieId]);
 
+  const fetchWatchStatus = useCallback(async () => {
+    if (!isAuthenticated) {
+      setWatchCompleted(false);
+      return;
+    }
+    try {
+      const status = await userService.getWatchStatus(movieId);
+      setWatchCompleted(status.completed);
+    } catch {
+      setWatchCompleted(false);
+    }
+  }, [isAuthenticated, movieId]);
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      await Promise.all([fetchMovie(), fetchReviews()]);
+      await Promise.all([fetchMovie(), fetchReviews(), fetchWatchStatus()]);
       setIsLoading(false);
     };
     loadData();
-  }, [fetchMovie, fetchReviews]);
+  }, [fetchMovie, fetchReviews, fetchWatchStatus]);
 
   const handleWatch = async () => {
     if (!isAuthenticated || !movie) return;
     setIsWatching(true);
     try {
-      await userService.watchMovie(movieId, 120);
-      toast.pointsEarned(15, "Movie watched!");
+      // Send the movie's full runtime so the backend marks it as a complete
+      // view. Fall back to a generous number if runtime isn't known.
+      const minutes = movie.runtimeMinutes && movie.runtimeMinutes > 0
+        ? movie.runtimeMinutes
+        : 9999;
+      const result = await userService.watchMovie(movieId, minutes);
+
+      if (result.completedNow && result.pointsAwarded > 0) {
+        toast.pointsEarned(result.pointsAwarded, "Movie watched!");
+      } else if (result.alreadyCompleted) {
+        toast.info(
+          "Already watched",
+          "You earned points the first time you watched this — re-watching doesn't award again."
+        );
+      } else {
+        toast.info(
+          "Watch recorded",
+          `Tracked at ${Math.round(result.watchedPercentage)}% — finish the movie to earn points.`
+        );
+      }
+      if (result.completedNow || result.alreadyCompleted) {
+        setWatchCompleted(true);
+      }
       await refreshUser();
     } catch (err) {
       const message =
@@ -250,13 +286,21 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
             <div className="flex flex-wrap gap-3 pt-4">
               {isAuthenticated ? (
                 <>
-                  <Button onClick={handleWatch} disabled={isWatching} className="gap-2">
+                  <Button
+                    onClick={handleWatch}
+                    disabled={isWatching || watchCompleted}
+                    variant={watchCompleted ? "outline" : "default"}
+                    className="gap-2"
+                    title={watchCompleted ? "You've already earned points for this movie" : undefined}
+                  >
                     {isWatching ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : watchCompleted ? (
+                      <CheckCircle2 className="h-4 w-4 text-accent" />
                     ) : (
                       <Play className="h-4 w-4" />
                     )}
-                    Mark as Watched (+15 pts)
+                    {watchCompleted ? "Already watched" : "Mark as Watched (+15 pts)"}
                   </Button>
                   <Button
                     variant="outline"

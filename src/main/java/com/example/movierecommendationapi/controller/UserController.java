@@ -68,10 +68,35 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
 
-    @PostMapping("/watchMovie/{movieId}") @ResponseStatus(HttpStatus.OK)
+    @PostMapping("/watchMovie/{movieId}")
     @Operation(summary = "Watch a movie")
-    public void watchMovie(@RequestParam Long movieId, int movieMinutes){
-        userService.watchMovie(movieId, movieMinutes);
+    public ResponseEntity<com.example.movierecommendationapi.dto.WatchMovieResponse> watchMovie(
+            @PathVariable Long movieId,
+            @RequestParam(defaultValue = "0") int movieMinutes
+    ) {
+        return ResponseEntity.ok(userService.watchMovie(movieId, movieMinutes));
+    }
+
+    @GetMapping("/watchMovie/{movieId}")
+    @Operation(summary = "Check whether the current user has completed a movie")
+    public ResponseEntity<com.example.movierecommendationapi.dto.WatchStatusDto> getWatchStatus(
+            @PathVariable Long movieId
+    ) {
+        return ResponseEntity.ok(userService.getWatchStatus(movieId));
+    }
+
+    @GetMapping("/{id}/points/history")
+    @Operation(summary = "Get a user's point-earning event history")
+    public ResponseEntity<List<com.example.movierecommendationapi.dto.PointHistoryDto>> getPointHistory(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(userService.getPointHistory(id));
+    }
+
+    @GetMapping("/{id}/watches/count")
+    @Operation(summary = "Number of movies this user has finished")
+    public ResponseEntity<Integer> getWatchCount(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getCompletedWatchCount(id));
     }
 }
 

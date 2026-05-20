@@ -39,4 +39,6 @@ public class MovieDto {
     private String posterPath;
 
     private String backdropPath;
+
+    private Integer runtimeMinutes;
 }

@@ -7,6 +7,7 @@ import { MovieCard, MovieCardSkeleton } from "@/components/movies/movie-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SurveyPromptModal } from "@/components/rewards/survey-prompt-modal";
 import { Search, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Movie, Genre, Page } from "@/types";
 
@@ -154,7 +155,7 @@ export default function MoviesPage() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
               {filteredMovies.map((movie) => (
-                <MovieCard key={movie.tmdbId} movie={movie} />
+                <MovieCard key={movie.id ?? movie.tmdbId} movie={movie} />
               ))}
             </div>
 
@@ -195,6 +196,8 @@ export default function MoviesPage() {
           </div>
         )}
       </div>
+
+      <SurveyPromptModal />
     </div>
   );
 }

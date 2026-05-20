@@ -18,6 +18,7 @@ export interface LoginResponse {
   token: string;
   username: string;
   userId: number;
+  firstLoginBonus: number;
 }
 
 export interface RegisterRequest {
@@ -39,9 +40,23 @@ export interface Movie {
   averageRating: number;
   posterPath?: string;
   backdropPath?: string;
+  runtimeMinutes?: number;
   directorIds: number[];
   genreIds: number[];
   actorIds: number[];
+}
+
+export interface WatchMovieResponse {
+  pointsAwarded: number;
+  totalPoints: number;
+  alreadyCompleted: boolean;
+  completedNow: boolean;
+  watchedPercentage: number;
+}
+
+export interface WatchStatus {
+  completed: boolean;
+  watchedMinutes: number | null;
 }
 
 export interface Genre {

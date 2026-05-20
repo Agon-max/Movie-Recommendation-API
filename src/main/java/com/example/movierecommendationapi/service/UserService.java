@@ -1,13 +1,17 @@
 package com.example.movierecommendationapi.service;
 
+import com.example.movierecommendationapi.dto.PointHistoryDto;
 import com.example.movierecommendationapi.dto.UserDto;
+import com.example.movierecommendationapi.dto.WatchMovieResponse;
 import com.example.movierecommendationapi.entity.Movie;
 import com.example.movierecommendationapi.entity.User;
+import com.example.movierecommendationapi.entity.UserPointHistory;
 import com.example.movierecommendationapi.entity.WatchHistory;
 import com.example.movierecommendationapi.entity.enums.PointEventType;
 import com.example.movierecommendationapi.error.ResourceNotFound;
 import com.example.movierecommendationapi.mapper.UserMapper;
 import com.example.movierecommendationapi.repository.MovieRepository;
+import com.example.movierecommendationapi.repository.UserPointHistoryRepository;
 import com.example.movierecommendationapi.repository.UserRepository;
 import com.example.movierecommendationapi.repository.WatchHistoryRepository;
 import com.example.movierecommendationapi.security.CustomUserDetails;
@@ -27,14 +31,16 @@ public class UserService {
     private final MovieRepository movieRepository;
     private final WatchHistoryRepository historyRepository;
     private final PointService pointService;
+    private final UserPointHistoryRepository pointHistoryRepository;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, MovieRepository movieRepository, WatchHistoryRepository watchHistoryRepository, PointService pointService) {
+    public UserService(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder, MovieRepository movieRepository, WatchHistoryRepository watchHistoryRepository, PointService pointService, UserPointHistoryRepository pointHistoryRepository) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.movieRepository = movieRepository;
         historyRepository = watchHistoryRepository;
         this.pointService = pointService;
+        this.pointHistoryRepository = pointHistoryRepository;
     }
 
     public UserDto createUser(UserDto userDto) {
@@ -87,7 +93,7 @@ public class UserService {
         return false;
     }
 
-    public void watchMovie(Long movieId, int watchedMinutes) {
+    public WatchMovieResponse watchMovie(Long movieId, int watchedMinutes) {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
@@ -113,31 +119,87 @@ public class UserService {
         history.setUser(user);
         history.setMovie(movie);
 
-        int runtime = movie.getRuntimeMinutes();
+        Integer runtimeBoxed = movie.getRuntimeMinutes();
+        int runtime = runtimeBoxed != null ? runtimeBoxed : 0;
 
-        if (runtime <= 0) {
-            throw new IllegalStateException("Movie runtime missing");
-        }
-
-        double percentage = (watchedMinutes * 100.0) / runtime;
+        // If runtime is unknown, treat any reported watch time as a full view
+        // rather than blocking the user on missing TMDB data.
+        double percentage = runtime > 0
+                ? (watchedMinutes * 100.0) / runtime
+                : 100.0;
 
         history.setWatchedMinutes(watchedMinutes);
 
-        if (percentage >= 90 && !history.isCompleted()) {
+        boolean alreadyCompleted = history.isCompleted();
+        boolean completedNow = false;
+        int pointsAwarded = 0;
 
+        if (percentage >= 90 && !alreadyCompleted) {
             history.setCompleted(true);
-
-            pointService.awardPoints(
-                    user,
-                    PointEventType.WATCH_MOVIE
-            );
+            completedNow = true;
+            pointsAwarded = 15;
+            pointService.awardPoints(user, PointEventType.WATCH_MOVIE);
         }
 
         historyRepository.save(history);
+
+        int totalPoints = userRepository.findById(userId)
+                .map(User::getTotalPoints)
+                .orElse(user.getTotalPoints());
+
+        return new WatchMovieResponse(
+                pointsAwarded,
+                totalPoints,
+                alreadyCompleted,
+                completedNow,
+                Math.min(percentage, 100.0)
+        );
     }
 
     public User getUserByEntityId(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFound("User not found"));
+    }
+
+    public List<PointHistoryDto> getPointHistory(Long userId) {
+        return pointHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(this::toPointHistoryDto)
+                .collect(Collectors.toList());
+    }
+
+    private PointHistoryDto toPointHistoryDto(UserPointHistory h) {
+        return new PointHistoryDto(
+                h.getId(),
+                h.getUser() != null ? h.getUser().getId() : null,
+                h.getEventType(),
+                h.getPointsReceived(),
+                h.getCreatedAt()
+        );
+    }
+
+    public int getCompletedWatchCount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFound("User not found"));
+        return historyRepository.findByUserAndCompletedTrue(user).size();
+    }
+
+    public com.example.movierecommendationapi.dto.WatchStatusDto getWatchStatus(Long movieId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new ResourceNotFound("There is no active user!");
+        }
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        User user = userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new ResourceNotFound("User not found"));
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new ResourceNotFound("Movie not found"));
+
+        return historyRepository.findByUserAndMovie(user, movie)
+                .map(h -> new com.example.movierecommendationapi.dto.WatchStatusDto(
+                        h.isCompleted(),
+                        h.getWatchedMinutes()
+                ))
+                .orElse(new com.example.movierecommendationapi.dto.WatchStatusDto(false, null));
     }
 }
