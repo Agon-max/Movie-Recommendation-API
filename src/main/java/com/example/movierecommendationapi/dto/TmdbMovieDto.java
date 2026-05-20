@@ -28,5 +28,9 @@ public class TmdbMovieDto {
     @JsonProperty("genre_ids")
     private List<Long> genreIds;
 
+    @JsonProperty("poster_path")
+    private String posterPath;
 
+    @JsonProperty("backdrop_path")
+    private String backdropPath;
 }

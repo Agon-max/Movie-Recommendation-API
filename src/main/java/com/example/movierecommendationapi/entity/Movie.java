@@ -46,6 +46,12 @@ public class Movie {
 
     private Integer runtimeMinutes;
 
+    @Column(length = 500)
+    private String posterPath;
+
+    @Column(length = 500)
+    private String backdropPath;
+
     @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(
             name = "movie_actors",

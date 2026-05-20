@@ -120,20 +120,18 @@ public class TmdbService {
         return results;
     }
 
-    private int getMovieRuntime(Long movieId) {
-
+    private Integer getMovieRuntime(Long movieId) {
         String url = tmdbMovieDetails + movieId + "?api_key=" + tmdbApiKey;
-
-        TmdbMovieDetailsDto movie = restTemplate.getForObject(
-                url,
-                TmdbMovieDetailsDto.class
-        );
-
-        if (movie == null) {
-            throw new ResourceNotFound("Movie details not found");
+        try {
+            TmdbMovieDetailsDto movie = restTemplate.getForObject(
+                    url,
+                    TmdbMovieDetailsDto.class
+            );
+            return movie != null ? movie.getRuntime() : null;
+        } catch (Exception e) {
+            // A missing runtime shouldn't fail the whole import.
+            return null;
         }
-
-        return movie.getRuntime();
     }
     // -------------------------
     // STEP 2: SAVE MOVIES ONLY
@@ -155,6 +153,8 @@ public class TmdbService {
             movie.setLanguage(dto.getOriginalLanguage());
             movie.setAverageRating(dto.getVoteAverage());
             movie.setRuntimeMinutes(getMovieRuntime(dto.getId()));
+            movie.setPosterPath(dto.getPosterPath());
+            movie.setBackdropPath(dto.getBackdropPath());
 
             movies.add(movie);
         }

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { use } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { movieService } from "@/services/movie.service";
 import { reviewService } from "@/services/review.service";
 import { userService } from "@/services/user.service";
 import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,9 +21,9 @@ import {
   Play,
   ArrowLeft,
   MessageSquare,
-  Trophy,
   Loader2,
   User,
+  Sparkles,
 } from "lucide-react";
 import type { Movie, Review } from "@/types";
 
@@ -33,8 +33,11 @@ interface MoviePageProps {
 
 export default function MovieDetailPage({ params }: MoviePageProps) {
   const { id } = use(params);
-  const { tmdbId } = use(params);
+  const movieId = Number(id);
+
   const { user, isAuthenticated, refreshUser } = useAuth();
+  const toast = useToast();
+
   const [movie, setMovie] = useState<Movie | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,26 +47,24 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
   const [reviewBody, setReviewBody] = useState("");
   const [reviewRating, setReviewRating] = useState(0);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [pointsEarned, setPointsEarned] = useState<number | null>(null);
 
- const fetchMovie = useCallback(async () => {
-   try {
-     const data = await movieService.getMovieByTmdbId(Number(tmdbId));
-     setMovie(data);
-   } catch (error) {
-     console.error("Failed to fetch movie:", error);
-   }
- }, [tmdbId]);
+  const fetchMovie = useCallback(async () => {
+    try {
+      const data = await movieService.getMovieById(movieId);
+      setMovie(data);
+    } catch {
+      setMovie(null);
+    }
+  }, [movieId]);
 
   const fetchReviews = useCallback(async () => {
     try {
-      const data = await reviewService.getReviewsByMovie(Number(id));
+      const data = await reviewService.getReviewsByMovie(movieId);
       setReviews(data);
-    } catch (error) {
-      console.error("Failed to fetch reviews:", error);
+    } catch {
       setReviews([]);
     }
-  }, [id]);
+  }, [movieId]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -76,15 +77,16 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
 
   const handleWatch = async () => {
     if (!isAuthenticated || !movie) return;
-    
     setIsWatching(true);
     try {
-      await userService.watchMovie(movie.tmdbId, 120);
-      setPointsEarned(15);
+      await userService.watchMovie(movieId, 120);
+      toast.pointsEarned(15, "Movie watched!");
       await refreshUser();
-      setTimeout(() => setPointsEarned(null), 3000);
-    } catch (error) {
-      console.error("Failed to mark as watched:", error);
+    } catch (err) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Couldn't record this watch.";
+      toast.error("Could not save", message);
     } finally {
       setIsWatching(false);
     }
@@ -97,22 +99,33 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
     setIsSubmittingReview(true);
     try {
       const newReview = await reviewService.createReview({
-        userId: user.id,
-        movieId: movie.tmdbId,
+        movieId,
         title: reviewTitle,
         body: reviewBody,
         rating_score: reviewRating,
       });
-      setReviews([newReview, ...reviews]);
+      setReviews((curr) => [newReview, ...curr]);
       setReviewTitle("");
       setReviewBody("");
       setReviewRating(0);
       setShowReviewForm(false);
-      setPointsEarned(10);
+      toast.pointsEarned(10, "Review posted!");
       await refreshUser();
-      setTimeout(() => setPointsEarned(null), 3000);
-    } catch (error) {
-      console.error("Failed to submit review:", error);
+    } catch (err) {
+      const e2 = err as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      if (e2.response?.status === 409) {
+        toast.error(
+          "Already reviewed",
+          e2.response.data?.message ?? "You've already reviewed this movie."
+        );
+      } else {
+        toast.error(
+          "Review failed",
+          e2.response?.data?.message ?? "Couldn't submit your review."
+        );
+      }
     } finally {
       setIsSubmittingReview(false);
     }
@@ -145,16 +158,6 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
 
   return (
     <div className="min-h-screen">
-      {/* Points Notification */}
-      {pointsEarned && (
-        <div className="fixed top-20 right-4 z-50 points-earned">
-          <div className="flex items-center gap-2 px-4 py-3 bg-accent text-accent-foreground rounded-lg shadow-lg">
-            <Trophy className="h-5 w-5" />
-            <span className="font-semibold">+{pointsEarned} points earned!</span>
-          </div>
-        </div>
-      )}
-
       {/* Backdrop */}
       {backdropUrl && (
         <div className="absolute top-0 left-0 right-0 h-[60vh] overflow-hidden">
@@ -171,8 +174,10 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back button */}
-        <Link href="/movies" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors">
+        <Link
+          href="/movies"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back to Movies
         </Link>
@@ -207,7 +212,7 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
                     </span>
                   </div>
                 )}
-                
+
                 {movie.releaseDate && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
@@ -224,7 +229,6 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
               </div>
             </div>
 
-            {/* Overview */}
             {movie.overview && (
               <div>
                 <h2 className="text-lg font-semibold text-foreground mb-2">Overview</h2>
@@ -232,7 +236,6 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
               </div>
             )}
 
-            {/* Genre badges */}
             {movie.genreIds.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {movie.genreIds.map((genreId) => (
@@ -244,8 +247,8 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-4 pt-4">
-              {isAuthenticated && (
+            <div className="flex flex-wrap gap-3 pt-4">
+              {isAuthenticated ? (
                 <>
                   <Button onClick={handleWatch} disabled={isWatching} className="gap-2">
                     {isWatching ? (
@@ -261,11 +264,16 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
                     className="gap-2"
                   >
                     <MessageSquare className="h-4 w-4" />
-                    Write Review (+10 pts)
+                    {showReviewForm ? "Hide form" : "Write Review (+10 pts)"}
                   </Button>
+                  <Link href="/recommendations">
+                    <Button variant="ghost" className="gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      More like this
+                    </Button>
+                  </Link>
                 </>
-              )}
-              {!isAuthenticated && (
+              ) : (
                 <Link href="/login">
                   <Button className="gap-2">
                     <User className="h-4 w-4" />
@@ -277,7 +285,6 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
           </div>
         </div>
 
-        {/* Review Form */}
         {showReviewForm && isAuthenticated && (
           <Card className="mt-8 animate-fade-in">
             <CardHeader>
@@ -296,9 +303,12 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
                     onRatingChange={setReviewRating}
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="reviewTitle" className="text-sm font-medium text-foreground mb-2 block">
+                  <label
+                    htmlFor="reviewTitle"
+                    className="text-sm font-medium text-foreground mb-2 block"
+                  >
                     Title
                   </label>
                   <Input
@@ -306,12 +316,14 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
                     placeholder="Review title..."
                     value={reviewTitle}
                     onChange={(e) => setReviewTitle(e.target.value)}
-                    required
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="reviewBody" className="text-sm font-medium text-foreground mb-2 block">
+                  <label
+                    htmlFor="reviewBody"
+                    className="text-sm font-medium text-foreground mb-2 block"
+                  >
                     Review
                   </label>
                   <textarea
@@ -319,14 +331,17 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
                     placeholder="Share your thoughts about this movie..."
                     value={reviewBody}
                     onChange={(e) => setReviewBody(e.target.value)}
-                    required
                     rows={4}
                     className="flex w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
 
-                <div className="flex gap-4">
-                  <Button type="submit" disabled={isSubmittingReview || reviewRating === 0}>
+                <div className="flex gap-3">
+                  <Button
+                    type="submit"
+                    disabled={isSubmittingReview || reviewRating === 0}
+                    className="gap-2"
+                  >
                     {isSubmittingReview ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -363,14 +378,18 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="font-semibold text-foreground">{review.title}</h3>
+                        <h3 className="font-semibold text-foreground">
+                          {review.title || "Untitled"}
+                        </h3>
                         <p className="text-sm text-muted-foreground">
                           by {review.username || `User ${review.userId}`}
                         </p>
                       </div>
                       <StarRating rating={review.rating_score} size="sm" />
                     </div>
-                    <p className="text-muted-foreground">{review.body}</p>
+                    {review.body && (
+                      <p className="text-muted-foreground">{review.body}</p>
+                    )}
                     {review.createdAt && (
                       <p className="text-xs text-muted-foreground mt-3">
                         {new Date(review.createdAt).toLocaleDateString()}
@@ -384,7 +403,9 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
             <Card>
               <CardContent className="py-12 text-center">
                 <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No reviews yet. Be the first to review!</p>
+                <p className="text-muted-foreground">
+                  No reviews yet. Be the first to review!
+                </p>
               </CardContent>
             </Card>
           )}

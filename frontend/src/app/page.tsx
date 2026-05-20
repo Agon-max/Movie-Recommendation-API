@@ -37,14 +37,20 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {isAuthenticated ? (
               <>
-                <Link href="/movies">
+                <Link href="/recommendations">
                   <Button size="lg" className="gap-2 text-base">
+                    <Sparkles className="h-5 w-5" />
+                    Get AI Picks
+                  </Button>
+                </Link>
+                <Link href="/movies">
+                  <Button variant="outline" size="lg" className="gap-2 text-base">
                     <Play className="h-5 w-5" />
                     Browse Movies
                   </Button>
                 </Link>
-                <Link href="/profile">
-                  <Button variant="outline" size="lg" className="gap-2 text-base">
+                <Link href="/rewards">
+                  <Button variant="ghost" size="lg" className="gap-2 text-base">
                     <Trophy className="h-5 w-5" />
                     {user?.totalPoints || 0} Points
                   </Button>

@@ -3,7 +3,12 @@
     "allow": [
       "WebSearch",
       "Read(*)",
-      "Write(*)"
+      "Write(*)",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match \"Java|jdk|jbr|Adoptium|Zulu|Liberica|Corretto\" }; Get-ChildItem \"C:\\\\Program Files \\(x86\\)\" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match \"Java|jdk\" })",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Users\\\\AgonRamadani\\\\.gradle\\\\jdks\\\\eclipse_adoptium-21-amd64-windows.2\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; .\\\\gradlew.bat compileJava --no-daemon 2>&1 | Select-Object -Last 80)",
+      "Bash(export JAVA_HOME=\"/c/Users/AgonRamadani/.gradle/jdks/eclipse_adoptium-21-amd64-windows.2\")",
+      "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
+      "Bash(./gradlew.bat compileJava)"
     ]
   }
 }

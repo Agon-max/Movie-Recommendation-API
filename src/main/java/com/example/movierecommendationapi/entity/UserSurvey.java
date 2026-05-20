@@ -1,10 +1,12 @@
 package com.example.movierecommendationapi.entity;
 
+import com.example.movierecommendationapi.entity.converter.StringListJsonConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,15 +25,19 @@ public class UserSurvey {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Convert(converter = StringListJsonConverter.class)
     @Column(columnDefinition = "TEXT")
     private List<String> favoriteGenres;
 
+    @Convert(converter = StringListJsonConverter.class)
     @Column(columnDefinition = "TEXT")
     private List<String> favoriteActors;
+
+    @Convert(converter = StringListJsonConverter.class)
     @Column(columnDefinition = "TEXT")
     private List<String> favoriteDirectors;
 
-    private String dislikes; // Optional: genres/content user dislikes
+    private String dislikes;
 
     @Column(nullable = false)
     private LocalDateTime completedAt;

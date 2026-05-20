@@ -1,10 +1,12 @@
 package com.example.movierecommendationapi.entity;
 
+import com.example.movierecommendationapi.entity.converter.StringListJsonConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,20 +25,23 @@ public class UserPreferences {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Convert(converter = StringListJsonConverter.class)
     @Column(columnDefinition = "TEXT")
-    private List<String> favoriteGenres; // JSON: ["Action", "Comedy"]
+    private List<String> favoriteGenres;
+
+    @Convert(converter = StringListJsonConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private List<String> favoriteActors;
+
+    @Convert(converter = StringListJsonConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private List<String> favoriteDirectors;
 
     @Column(columnDefinition = "TEXT")
-    private List<String> favoriteActors; // JSON: ["Actor1", "Actor2"]
+    private String watchHistorySummary;
 
     @Column(columnDefinition = "TEXT")
-    private List<String> favoriteDirectors; // JSON: ["Director1"]
-
-    @Column(columnDefinition = "TEXT")
-    private String watchHistorySummary; // "Watched 10 movies: 5 Action, 3 Comedy, 2 Drama"
-
-    @Column(columnDefinition = "TEXT")
-    private String surveySummary; // "Likes Action and Sci-Fi, dislikes Horror"
+    private String surveySummary;
 
     private Integer totalMoviesWatched;
 

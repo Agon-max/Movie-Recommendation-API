@@ -429,7 +429,7 @@ export default function AdminDashboard() {
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">{reward.description}</p>
-                          <p className="text-sm text-accent mt-1">Cost: {reward.pointsCost} points</p>
+                          <p className="text-sm text-accent mt-1">Cost: {reward.pointCost} points</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button variant="ghost" size="icon">

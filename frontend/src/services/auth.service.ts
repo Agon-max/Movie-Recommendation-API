@@ -3,18 +3,20 @@ import type { LoginRequest, LoginResponse, RegisterRequest, User } from "@/types
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    debugger;
     const response = await api.post<LoginResponse>("/auth/login", credentials);
     const data = response.data;
-    
+
     if (typeof window !== "undefined") {
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify({
-        id: data.userId,
-        username: data.username,
-      }));
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: data.userId,
+          username: data.username,
+        })
+      );
     }
-    
+
     return data;
   },
 

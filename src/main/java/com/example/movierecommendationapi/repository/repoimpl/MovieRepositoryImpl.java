@@ -19,7 +19,14 @@ public class MovieRepositoryImpl implements MovieRepositoryCustom {
 
     @Override
     public Optional<Movie> findByTmdbId(Long tmdbId) {
-        var movie = entityManager.find(Movie.class, tmdbId);
-        return Optional.ofNullable(movie);
+        // entityManager.find() searches by primary key (id), not by tmdbId.
+        // We need a JPQL query against the actual tmdbId column.
+        var results = entityManager.createQuery(
+                        "SELECT m FROM Movie m WHERE m.tmdbId = :tmdbId",
+                        Movie.class)
+                .setParameter("tmdbId", tmdbId)
+                .setMaxResults(1)
+                .getResultList();
+        return results.stream().findFirst();
     }
 }

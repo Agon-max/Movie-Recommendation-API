@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/auth-context";
+import { ToastProvider } from "@/components/ui/toast";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import "./globals.css";
@@ -17,7 +18,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MovieRec - Personalized Movie Recommendations",
-  description: "Discover your next favorite movie with AI-powered recommendations. Earn rewards as you explore and engage with our community.",
+  description:
+    "Discover your next favorite movie with AI-powered recommendations. Earn rewards as you explore and engage with our community.",
   keywords: ["movies", "recommendations", "streaming", "reviews", "ratings"],
 };
 
@@ -39,9 +41,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background">
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1 pt-16">{children}</main>
-          <Footer />
+          <ToastProvider>
+            <Navbar />
+            <main className="flex-1 pt-16">{children}</main>
+            <Footer />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

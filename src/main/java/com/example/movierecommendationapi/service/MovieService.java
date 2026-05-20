@@ -46,6 +46,8 @@ public class MovieService {
         movie.setOverview(movieDto.getOverview());
         movie.setReleaseDate(movieDto.getReleaseDate());
         movie.setAverageRating(movieDto.getAverageRating());
+        movie.setPosterPath(movieDto.getPosterPath());
+        movie.setBackdropPath(movieDto.getBackdropPath());
 
         movie.setGenres(
                 movieDto.getGenreIds() == null || movieDto.getGenreIds().isEmpty()
@@ -81,12 +83,15 @@ public class MovieService {
 
         MovieDto response = new MovieDto();
 
+        response.setId(savedMovie.getId());
         response.setTmdbId(savedMovie.getTmdbId());
         response.setTitle(savedMovie.getTitle());
         response.setLanguage(savedMovie.getLanguage());
         response.setOverview(savedMovie.getOverview());
         response.setReleaseDate(savedMovie.getReleaseDate());
         response.setAverageRating(savedMovie.getAverageRating());
+        response.setPosterPath(savedMovie.getPosterPath());
+        response.setBackdropPath(savedMovie.getBackdropPath());
 
         response.setActorIds(
                 savedMovie.getActors()
@@ -137,6 +142,8 @@ public class MovieService {
         dto.setLanguage(movie.getLanguage());
         dto.setReleaseDate(movie.getReleaseDate());
         dto.setAverageRating(movie.getAverageRating());
+        dto.setPosterPath(movie.getPosterPath());
+        dto.setBackdropPath(movie.getBackdropPath());
 
         dto.setActorIds(
                 movie.getActors()

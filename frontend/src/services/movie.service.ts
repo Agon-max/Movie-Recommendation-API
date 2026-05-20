@@ -9,9 +9,9 @@ export const movieService = {
     return response.data;
   },
 
-  async getMovieByTmdbId(tmdbId: number): Promise<Movie> {
-   const response = await api.get<Movie>(`/movies/tmdb/${tmdbId}`);
-   return response.data;
+  async getMovieById(id: number): Promise<Movie> {
+    const response = await api.get<Movie>(`/movies/${id}`);
+    return response.data;
   },
 
   async createMovie(movie: Omit<Movie, "id">): Promise<Movie> {

@@ -11,6 +11,8 @@ import java.util.List;
 @Getter
 @Setter
 public class MovieDto {
+    private Long id;
+
     private Long tmdbId;
     @NotBlank
     @Size(max = 255)
@@ -33,4 +35,8 @@ public class MovieDto {
     @DecimalMin("0.0")
     @DecimalMax("10.0")
     private Double averageRating;
+
+    private String posterPath;
+
+    private String backdropPath;
 }

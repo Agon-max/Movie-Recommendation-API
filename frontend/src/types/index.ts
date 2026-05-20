@@ -1,4 +1,6 @@
-// User types
+// ============================================================================
+// User & Auth
+// ============================================================================
 export interface User {
   id: number;
   username: string;
@@ -24,7 +26,9 @@ export interface RegisterRequest {
   password: string;
 }
 
-// Movie types
+// ============================================================================
+// Movies / catalog
+// ============================================================================
 export interface Movie {
   id?: number;
   tmdbId: number;
@@ -57,7 +61,9 @@ export interface Director {
   profilePath?: string;
 }
 
-// Review types
+// ============================================================================
+// Reviews
+// ============================================================================
 export interface Review {
   id?: number;
   userId: number;
@@ -70,7 +76,16 @@ export interface Review {
   username?: string;
 }
 
-// Reward types
+export interface ReviewCreate {
+  movieId: number;
+  title?: string;
+  body?: string;
+  rating_score: number;
+}
+
+// ============================================================================
+// Points
+// ============================================================================
 export type PointEventType =
   | "WATCH_MOVIE"
   | "WRITE_REVIEW"
@@ -93,30 +108,74 @@ export interface PointHistory {
   createdAt: string;
 }
 
+// ============================================================================
+// Rewards & Redemptions
+// ============================================================================
+export type RewardType = "GIFT_CARD" | "CASH_PAYOUT" | "DISCOUNT_CODE";
+
 export interface Reward {
   id: number;
   name: string;
   description: string;
-  pointsCost: number;
-  rewardType: "DISCOUNT" | "FREE_RENTAL" | "BADGE" | "PREMIUM_ACCESS";
+  pointCost: number;
+  type: RewardType;
+  monetaryValue: number;
+  stock: number;
   active: boolean;
 }
 
-// Survey types
-export interface UserSurvey {
-  favoriteGenres: number[];
-  favoriteActors: number[];
-  favoriteDirectors: number[];
-  dislikes: string[];
+export interface RewardCreate {
+  name: string;
+  description?: string;
+  pointCost: number;
+  type: RewardType;
+  monetaryValue?: number;
+  stock?: number;
+  active?: boolean;
+}
+
+export type RedemptionStatus = "PENDING" | "APPROVED" | "FULFILLED" | "REJECTED";
+
+export interface Redemption {
+  id: number;
+  userId?: number;
+  rewardId?: number;
+  rewardName?: string;
+  pointsSpent?: number;
+  status?: RedemptionStatus;
+  createdAt?: string;
+  fulfilledAt?: string;
+}
+
+// ============================================================================
+// Survey
+// ============================================================================
+export interface UserSurveyDto {
+  id?: number;
+  userId?: number;
+  favoriteGenres: string[];
+  favoriteActors: string[];
+  favoriteDirectors: string[];
+  dislikes?: string;
+  completedAt?: string;
 }
 
 export interface SurveyResponse {
-  completed: boolean;
-  survey: UserSurvey | null;
+  exists: boolean;
+  survey: UserSurveyDto | null;
   message: string | null;
 }
 
-// Pagination
+export interface SurveyRequest {
+  favoriteGenres: string[];
+  favoriteActors: string[];
+  favoriteDirectors: string[];
+  dislikes?: string;
+}
+
+// ============================================================================
+// Pagination & Leaderboard
+// ============================================================================
 export interface Page<T> {
   content: T[];
   totalPages: number;
@@ -127,7 +186,6 @@ export interface Page<T> {
   last: boolean;
 }
 
-// Leaderboard
 export interface LeaderboardEntry {
   rank: number;
   userId: number;
