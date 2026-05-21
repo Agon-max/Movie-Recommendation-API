@@ -16,6 +16,8 @@ public class RedemptionDto {
     private String rewardName;
     private int pointsSpent;
     private RedemptionStatus status;
-    private LocalDateTime redeemedAt;
+    // The frontend uses `createdAt` for the timestamp; map from
+    // Redemption.redeemedAt in RedemptionMapper.
+    private LocalDateTime createdAt;
     private LocalDateTime fulfilledAt;
 }

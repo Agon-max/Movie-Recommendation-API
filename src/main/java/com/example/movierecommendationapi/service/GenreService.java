@@ -46,7 +46,7 @@ public class GenreService {
     public GenreDto createGenre(GenreDto genreDto) {
         Genre genre = new Genre();
         genre.setTmdbId(genreDto.getTmdbId());
-        genre.setTitle(genreDto.getTitle());
+        genre.setTitle(genreDto.getName());
         Genre savedGenre = genreRepository.save(genre);
         return genreMapper.toDto(savedGenre);
     }
@@ -81,7 +81,7 @@ public class GenreService {
             GenreDto genreDto = new GenreDto();
 
             genreDto.setTmdbId(tmdbGenre.getId());
-            genreDto.setTitle(tmdbGenre.getName());
+            genreDto.setName(tmdbGenre.getName());
 
             createGenre(genreDto);
         }

@@ -1,11 +1,24 @@
 import api from "@/lib/api";
 import type { Movie, Page, Genre } from "@/types";
 
+export interface SearchFilters {
+  title?: string;
+  genreId?: number | null;
+  releaseYear?: number | null;
+}
+
 export const movieService = {
-  async searchMovies(title: string, page = 0, size = 10): Promise<Page<Movie>> {
-    const response = await api.get<Page<Movie>>("/movies/search", {
-      params: { title, page, size },
-    });
+  async searchMovies(
+    filters: SearchFilters = {},
+    page = 0,
+    size = 20
+  ): Promise<Page<Movie>> {
+    const params: Record<string, string | number> = { page, size };
+    if (filters.title && filters.title.trim()) params.title = filters.title.trim();
+    if (filters.genreId != null) params.genreId = filters.genreId;
+    if (filters.releaseYear != null) params.releaseYear = filters.releaseYear;
+
+    const response = await api.get<Page<Movie>>("/movies/search", { params });
     return response.data;
   },
 

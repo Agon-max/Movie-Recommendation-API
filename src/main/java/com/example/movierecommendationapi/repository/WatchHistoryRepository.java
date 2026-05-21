@@ -13,4 +13,5 @@ import java.util.Optional;
 public interface WatchHistoryRepository extends JpaRepository<WatchHistory, Long> {
     Optional<WatchHistory> findByUserAndMovie(User user, Movie movie);
     List<WatchHistory> findByUserAndCompletedTrue(User user);
+    boolean existsByUserIdAndMovieIdAndCompletedTrue(Long userId, Long movieId);
 }

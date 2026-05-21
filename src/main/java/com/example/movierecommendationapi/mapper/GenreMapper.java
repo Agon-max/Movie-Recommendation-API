@@ -10,10 +10,13 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface GenreMapper {
+    @Mapping(source = "title", target = "name")
     GenreDto toDto(Genre genre);
 
+    @Mapping(source = "name", target = "title")
     Genre toEntity(GenreDto dto);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(source = "name", target = "title")
     void updateManagedGenre(GenreDto genreDto, @MappingTarget Genre genre);
 }

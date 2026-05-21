@@ -8,7 +8,15 @@
       "PowerShell($env:JAVA_HOME = \"C:\\\\Users\\\\AgonRamadani\\\\.gradle\\\\jdks\\\\eclipse_adoptium-21-amd64-windows.2\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; .\\\\gradlew.bat compileJava --no-daemon 2>&1 | Select-Object -Last 80)",
       "Bash(export JAVA_HOME=\"/c/Users/AgonRamadani/.gradle/jdks/eclipse_adoptium-21-amd64-windows.2\")",
       "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
-      "Bash(./gradlew.bat compileJava)"
+      "Bash(./gradlew.bat compileJava)",
+      "Bash(git -C \"C:\\\\Users\\\\ramad\\\\Documents\\\\GitHub\\\\Movie-Recommendation-API\" diff src/main/java/com/example/movierecommendationapi/repository/customRepos/ActorRepositoryCustom.java)",
+      "Bash(git -C \"C:\\\\Users\\\\ramad\\\\Documents\\\\GitHub\\\\Movie-Recommendation-API\" log --all --oneline --source -- src/main/java/com/example/movierecommendationapi/service/TmdbService.java)",
+      "Bash(git -C \"C:\\\\Users\\\\ramad\\\\Documents\\\\GitHub\\\\Movie-Recommendation-API\" diff src/main/java/com/example/movierecommendationapi/security/JwtAuthenticationFilter.java)",
+      "Bash(./gradlew compileJava -q)",
+      "Bash(./gradlew compileJava)",
+      "Bash(curl -sS -w \"\\\\nHTTP %{http_code}\\\\n\" \"https://api.themoviedb.org/3/movie/popular?api_key=73caea9b506ae234c9641d204af978c5&page=1\")",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

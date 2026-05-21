@@ -180,8 +180,7 @@ public class RecommendationService {
     }
 
     // =========================
-    // INTERNAL STRUCT
-    // =========================
+    // INTERNAL STRUCT    // =========================
     private static class ScoredMovie {
         Movie movie;
         double score;

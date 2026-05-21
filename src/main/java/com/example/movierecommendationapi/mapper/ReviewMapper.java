@@ -11,6 +11,7 @@ import org.mapstruct.MappingConstants;
 public interface ReviewMapper {
 
     @Mapping(source = "user.id", target = "userId")
+    @Mapping(source = "user.username", target = "username")
     @Mapping(source = "movie.id", target = "movieId")
     ReviewDto toDto(Review review);
 

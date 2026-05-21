@@ -1,6 +1,6 @@
 package com.example.movierecommendationapi.controller;
 
-import com.example.movierecommendationapi.entity.Redemption;
+import com.example.movierecommendationapi.dto.RedemptionDto;
 import com.example.movierecommendationapi.service.RedemptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,23 +22,20 @@ public class RedemptionController {
 
     @PostMapping
     @Operation(summary = "Redeem a reward")
-    public ResponseEntity<Redemption> redeemReward(
+    public ResponseEntity<RedemptionDto> redeemReward(
             @RequestParam Long userId,
             @RequestParam Long rewardId
     ) {
-
-        Redemption redemption =
-                redemptionService.redeemReward(userId, rewardId);
-
-        return ResponseEntity.ok(redemption);
+        return ResponseEntity.ok(
+                redemptionService.redeemReward(userId, rewardId)
+        );
     }
 
     @GetMapping("/{userId}")
     @Operation(summary = "Get redemption history for user")
-    public ResponseEntity<List<Redemption>> getUserRedemptions(
+    public ResponseEntity<List<RedemptionDto>> getUserRedemptions(
             @PathVariable Long userId
     ) {
-
         return ResponseEntity.ok(
                 redemptionService.getUserRedemptions(userId)
         );

@@ -125,6 +125,18 @@ public class MovieService {
         return movieToReturn.map(movieMapper::toDto);
     }
 
+    @Transactional
+    public Page<MovieDto> searchMovies(
+            String title,
+            Long genreId,
+            Integer releaseYear,
+            Pageable pageable
+    ) {
+        return movieRepository
+                .searchMovies(title, genreId, releaseYear, pageable)
+                .map(movieMapper::toDto);
+    }
+
     // Convenient method to check if a movie exists
     public boolean movieExists(Long id) {
         return movieRepository.existsById(id);
@@ -134,6 +146,12 @@ public class MovieService {
 
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFound("Movie not found!"));
+
+        // Treat adult-flagged movies as if they don't exist — direct links,
+        // recommendations, and any other path that lands here all 404.
+        if (movie.isAdult()) {
+            throw new ResourceNotFound("Movie not found!");
+        }
 
         MovieDto dto = new MovieDto();
 

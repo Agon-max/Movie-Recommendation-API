@@ -9,6 +9,7 @@ import com.example.movierecommendationapi.entity.enums.PointEventType;
 import com.example.movierecommendationapi.error.ResourceNotFound;
 import com.example.movierecommendationapi.mapper.ReviewMapper;
 import com.example.movierecommendationapi.repository.ReviewRepository;
+import com.example.movierecommendationapi.repository.WatchHistoryRepository;
 import com.example.movierecommendationapi.security.CustomUserDetails;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -29,17 +30,20 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ReviewMapper reviewMapper;
     private final PointService pointService;
+    private final WatchHistoryRepository watchHistoryRepository;
 
     public ReviewService(MovieService movieService,
                          UserService userService,
                          ReviewRepository reviewRepository,
                          ReviewMapper reviewMapper,
-                         PointService pointService) {
+                         PointService pointService,
+                         WatchHistoryRepository watchHistoryRepository) {
         this.movieService = movieService;
         this.userService = userService;
         this.reviewRepository = reviewRepository;
         this.reviewMapper = reviewMapper;
         this.pointService = pointService;
+        this.watchHistoryRepository = watchHistoryRepository;
     }
 
     @Transactional
@@ -50,6 +54,14 @@ public class ReviewService {
 
         User currentUser = requireCurrentUser();
         Movie movie = movieService.getMovieEntityById(dto.getMovieId());
+
+        if (!watchHistoryRepository.existsByUserIdAndMovieIdAndCompletedTrue(
+                currentUser.getId(), movie.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You can only review a movie after watching it"
+            );
+        }
 
         if (reviewRepository.existsByUserIdAndMovieId(currentUser.getId(), movie.getId())) {
             throw new ResponseStatusException(

@@ -61,8 +61,8 @@ export default function RewardsPage() {
         rewardService.getActiveRewards().catch(() => []),
         redemptionService.getUserRedemptions(user.id).catch(() => [] as Redemption[]),
       ]);
-      setRewards(rewardsData);
-      setRedemptions(redemptionsData);
+      setRewards(Array.isArray(rewardsData) ? rewardsData : []);
+      setRedemptions(Array.isArray(redemptionsData) ? redemptionsData : []);
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ export default function RewardsPage() {
         `Redeemed: ${selected.name}`
       );
       toast.success("Reward unlocked", "Your redemption is on its way.");
-      setRedemptions((prev) => [redemption, ...prev]);
+      setRedemptions((prev) => [redemption, ...(Array.isArray(prev) ? prev : [])]);
       setSelected(null);
       await Promise.all([refreshUser(), fetchData()]);
     } catch (err) {

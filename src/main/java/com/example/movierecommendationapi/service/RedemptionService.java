@@ -1,8 +1,11 @@
 package com.example.movierecommendationapi.service;
 
+import com.example.movierecommendationapi.dto.RedemptionDto;
 import com.example.movierecommendationapi.entity.*;
 import com.example.movierecommendationapi.entity.enums.PointEventType;
+import com.example.movierecommendationapi.entity.enums.RedemptionStatus;
 import com.example.movierecommendationapi.error.ResourceNotFound;
+import com.example.movierecommendationapi.mapper.RedemptionMapper;
 import com.example.movierecommendationapi.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,7 @@ public class RedemptionService {
     private final UserPointHistoryRepository historyRepository;
     private final PointService pointService;
     private final UserRedemptionHistoryRepository redemptionHistoryRepo;
+    private final RedemptionMapper redemptionMapper;
 
     public RedemptionService(
             RedemptionRepository redemptionRepository,
@@ -26,7 +30,8 @@ public class RedemptionService {
             UserRepository userRepository,
             UserPointHistoryRepository historyRepository,
             PointService pointService,
-            UserRedemptionHistoryRepository redemptionHistoryRepo
+            UserRedemptionHistoryRepository redemptionHistoryRepo,
+            RedemptionMapper redemptionMapper
     ) {
         this.redemptionRepository = redemptionRepository;
         this.rewardRepository = rewardRepository;
@@ -34,11 +39,12 @@ public class RedemptionService {
         this.historyRepository = historyRepository;
         this.pointService = pointService;
         this.redemptionHistoryRepo = redemptionHistoryRepo;
+        this.redemptionMapper = redemptionMapper;
     }
 
 
     @Transactional
-    public Redemption redeemReward(Long userId, Long rewardId) {
+    public RedemptionDto redeemReward(Long userId, Long rewardId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
@@ -88,6 +94,7 @@ public class RedemptionService {
         redemption.setReward(reward);
         redemption.setPointsSpent(reward.getPointCost());
         redemption.setRedeemedAt(LocalDateTime.now());
+        redemption.setStatus(RedemptionStatus.PENDING);
 
         Redemption savedRedemption =
                 redemptionRepository.save(redemption);
@@ -117,15 +124,18 @@ public class RedemptionService {
 
         historyRepository.save(pointHistory);
 
-        return savedRedemption;
+        return redemptionMapper.toDto(savedRedemption);
     }
 
-    public List<Redemption> getUserRedemptions(Long userId) {
+    public List<RedemptionDto> getUserRedemptions(Long userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
                         new ResourceNotFound("User not found"));
 
-        return redemptionRepository.findByUser(user);
+        return redemptionRepository.findByUser(user)
+                .stream()
+                .map(redemptionMapper::toDto)
+                .toList();
     }
 }

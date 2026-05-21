@@ -52,6 +52,11 @@ public class Movie {
     @Column(length = 500)
     private String backdropPath;
 
+    // TMDB's adult flag. When true the movie is hidden from search results
+    // and recommendations. Filtered at query time, plus we skip these at
+    // import so they never enter the DB in the first place.
+    private boolean adult;
+
     @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(
             name = "movie_actors",

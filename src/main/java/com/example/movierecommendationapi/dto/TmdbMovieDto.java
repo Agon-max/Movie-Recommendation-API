@@ -16,6 +16,8 @@ public class TmdbMovieDto {
 
     private String overview;
 
+    private boolean adult;
+
     @JsonProperty("original_language")
     private String originalLanguage;
 

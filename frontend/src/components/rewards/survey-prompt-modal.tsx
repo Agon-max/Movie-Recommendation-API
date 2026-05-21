@@ -11,10 +11,11 @@ import { Brain, Sparkles, Wand2, ArrowRight, X } from "lucide-react";
 const DISMISS_KEY = "survey-prompt-dismissed";
 
 /**
- * Shown on the /movies page the first time an authenticated user lands
- * there without a completed taste survey. They can choose to take the
- * survey now, or dismiss and browse. Dismissal is remembered locally so
- * the modal doesn't nag every visit.
+ * Reminds authenticated users without a completed taste survey to take it
+ * before browsing. Dismissal is session-scoped (sessionStorage), so closing
+ * it doesn't hide it forever — it returns on the next visit. The /survey
+ * submit handler also clears any leftover localStorage flag from older
+ * builds so the prompt re-surfaces correctly until completed.
  */
 export function SurveyPromptModal() {
   const router = useRouter();
@@ -25,7 +26,10 @@ export function SurveyPromptModal() {
     if (isLoading || !isAuthenticated || !user) return;
 
     if (typeof window === "undefined") return;
-    if (window.localStorage.getItem(DISMISS_KEY) === "true") return;
+    // Clean up any sticky localStorage flag from older builds so the modal
+    // can re-appear (we now only honor session-scoped dismissals).
+    window.localStorage.removeItem(DISMISS_KEY);
+    if (window.sessionStorage.getItem(DISMISS_KEY) === "true") return;
 
     let cancelled = false;
     (async () => {
@@ -47,7 +51,7 @@ export function SurveyPromptModal() {
   const dismiss = (persist: boolean) => {
     setOpen(false);
     if (persist && typeof window !== "undefined") {
-      window.localStorage.setItem(DISMISS_KEY, "true");
+      window.sessionStorage.setItem(DISMISS_KEY, "true");
     }
   };
 

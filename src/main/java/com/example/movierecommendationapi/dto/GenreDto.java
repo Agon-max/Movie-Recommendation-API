@@ -7,7 +7,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GenreDto {
+    private Long id;
     private Long tmdbId;
     @NotBlank
-    private String title;
+    private String name;
 }

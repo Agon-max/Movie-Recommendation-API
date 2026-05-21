@@ -47,8 +47,13 @@ public class ActorRepositoryImpl implements ActorRepositoryCustom {
 
     @Override
     public Optional<Actor> findByTmdbId(Long tmdbId) {
-        Actor actor = entityManager.find(Actor.class, tmdbId);  // Or query by tmdbId
-        return Optional.ofNullable(actor);
+        var results = entityManager.createQuery(
+                        "SELECT a FROM Actor a WHERE a.tmdbId = :tmdbId",
+                        Actor.class)
+                .setParameter("tmdbId", tmdbId)
+                .setMaxResults(1)
+                .getResultList();
+        return results.stream().findFirst();
     }
 
 

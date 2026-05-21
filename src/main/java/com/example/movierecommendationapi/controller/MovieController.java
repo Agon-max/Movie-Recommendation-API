@@ -37,9 +37,16 @@ public class MovieController{
    }
 
    @GetMapping("/search")
-   @Operation(summary = "Get a movie by title")
-   public ResponseEntity<Page<MovieDto>> getMovieByTitle(@RequestParam("title") String movieTitle, @PageableDefault(size = 10, sort = "title") Pageable pageable){
-       return ResponseEntity.ok(movieService.getMovieByTitle(movieTitle, pageable));
+   @Operation(summary = "Search movies by optional title, genre, and release year")
+   public ResponseEntity<Page<MovieDto>> searchMovies(
+           @RequestParam(value = "title", required = false) String title,
+           @RequestParam(value = "genreId", required = false) Long genreId,
+           @RequestParam(value = "releaseYear", required = false) Integer releaseYear,
+           @PageableDefault(size = 20, sort = "title") Pageable pageable
+   ) {
+       return ResponseEntity.ok(
+               movieService.searchMovies(title, genreId, releaseYear, pageable)
+       );
    }
 
    @GetMapping("/{id}")

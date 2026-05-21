@@ -29,5 +29,6 @@ public class ImportJob {
 
     private LocalDateTime finishedAt;
 
+    @Column(columnDefinition = "TEXT")
     private String errorMessage;
 }

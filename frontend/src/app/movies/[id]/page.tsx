@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { movieService } from "@/services/movie.service";
@@ -26,7 +26,7 @@ import {
   Sparkles,
   CheckCircle2,
 } from "lucide-react";
-import type { Movie, Review } from "@/types";
+import type { Genre, Movie, Review } from "@/types";
 
 interface MoviePageProps {
   params: Promise<{ id: string }>;
@@ -41,6 +41,7 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
 
   const [movie, setMovie] = useState<Movie | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [genres, setGenres] = useState<Genre[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isWatching, setIsWatching] = useState(false);
   const [watchCompleted, setWatchCompleted] = useState(false);
@@ -89,6 +90,34 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
     };
     loadData();
   }, [fetchMovie, fetchReviews, fetchWatchStatus]);
+
+  // Load the genre list once so we can resolve genreIds → names. Cached at
+  // the page level rather than the movie level since the catalogue is stable.
+  useEffect(() => {
+    movieService
+      .getAllGenres()
+      .then((data) => setGenres(Array.isArray(data) ? data : []))
+      .catch(() => setGenres([]));
+  }, []);
+
+  const genreNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const g of genres) map.set(g.id, g.name);
+    return map;
+  }, [genres]);
+
+  const hasReviewed = useMemo(
+    () => (user ? reviews.some((r) => r.userId === user.id) : false),
+    [reviews, user]
+  );
+  const canReview = isAuthenticated && watchCompleted && !hasReviewed;
+  const reviewBlockedReason = !isAuthenticated
+    ? "Sign in to write a review"
+    : hasReviewed
+    ? "You've already reviewed this movie"
+    : !watchCompleted
+    ? "Watch the movie first to unlock reviews"
+    : undefined;
 
   const handleWatch = async () => {
     if (!isAuthenticated || !movie) return;
@@ -155,6 +184,11 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
         toast.error(
           "Already reviewed",
           e2.response.data?.message ?? "You've already reviewed this movie."
+        );
+      } else if (e2.response?.status === 403) {
+        toast.error(
+          "Watch first",
+          e2.response.data?.message ?? "You can only review a movie after watching it."
         );
       } else {
         toast.error(
@@ -276,7 +310,7 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
               <div className="flex flex-wrap gap-2">
                 {movie.genreIds.map((genreId) => (
                   <Badge key={genreId} variant="secondary">
-                    Genre {genreId}
+                    {genreNameById.get(genreId) ?? `Genre ${genreId}`}
                   </Badge>
                 ))}
               </div>
@@ -305,10 +339,18 @@ export default function MovieDetailPage({ params }: MoviePageProps) {
                   <Button
                     variant="outline"
                     onClick={() => setShowReviewForm(!showReviewForm)}
+                    disabled={!canReview}
+                    title={reviewBlockedReason}
                     className="gap-2"
                   >
                     <MessageSquare className="h-4 w-4" />
-                    {showReviewForm ? "Hide form" : "Write Review (+10 pts)"}
+                    {hasReviewed
+                      ? "Review submitted"
+                      : !watchCompleted
+                      ? "Watch first to review"
+                      : showReviewForm
+                      ? "Hide form"
+                      : "Write Review (+10 pts)"}
                   </Button>
                   <Link href="/recommendations">
                     <Button variant="ghost" className="gap-2">

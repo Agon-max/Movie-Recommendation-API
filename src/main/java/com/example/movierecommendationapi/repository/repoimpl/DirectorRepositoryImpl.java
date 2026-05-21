@@ -43,8 +43,13 @@ public class DirectorRepositoryImpl implements DirectorRepositoryCustom {
 
     @Override
     public Optional<Director> findByTmdbId(Long tmdbId) {
-        Director director = entityManager.find(Director.class, tmdbId);
-        return Optional.ofNullable(director);
+        var results = entityManager.createQuery(
+                        "SELECT d FROM Director d WHERE d.tmdbId = :tmdbId",
+                        Director.class)
+                .setParameter("tmdbId", tmdbId)
+                .setMaxResults(1)
+                .getResultList();
+        return results.stream().findFirst();
     }
 
 }

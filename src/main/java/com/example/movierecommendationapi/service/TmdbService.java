@@ -12,25 +12,35 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.*;
 
 @Service
 public class TmdbService {
 
-    private final RestTemplate restTemplate;
     private final MovieRepository movieRepository;
     private final ActorRepository actorRepository;
     private final DirectorRepository directorRepository;
     private final GenreRepository genreRepository;
     private final ImportJobRepository importJobRepository;
 
+    // We use java.net.http.HttpClient directly instead of RestTemplate so we
+    // don't have to fight Spring Boot 4's message-converter chain (the Jackson
+    // converter sits at position 0 and tries to deserialize {...} into a String
+    // when getForObject(url, String.class) is called, which blows up with
+    // "Error while extracting response for type [class java.lang.String]").
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
     // Dedicated Jackson 2.x mapper — Spring Boot 4 uses Jackson 3.x by default
     // (tools.jackson.*), which doesn't recognise our @JsonProperty annotations
-    // from com.fasterxml.jackson.annotation. We bypass RestTemplate's converter
-    // chain and parse JSON manually with this mapper so the snake_case ↔ camelCase
-    // mappings on TmdbMovieDto et al. actually fire.
+    // from com.fasterxml.jackson.annotation.
     private final ObjectMapper jsonMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
@@ -51,14 +61,12 @@ public class TmdbService {
     private String tmdbMovieDetails;
 
     public TmdbService(
-            RestTemplate restTemplate,
             MovieRepository movieRepository,
             ActorRepository actorRepository,
             DirectorRepository directorRepository,
             GenreRepository genreRepository,
             ImportJobRepository importJobRepository
     ) {
-        this.restTemplate = restTemplate;
         this.movieRepository = movieRepository;
         this.actorRepository = actorRepository;
         this.directorRepository = directorRepository;
@@ -66,19 +74,28 @@ public class TmdbService {
         this.importJobRepository = importJobRepository;
     }
 
-    /**
-     * Fetch a TMDB endpoint as raw JSON, then deserialize with our Jackson 2.x
-     * mapper. Bypasses RestTemplate's message converters entirely so we don't
-     * pick up the Jackson 3.x converter (which ignores Jackson 2.x annotations).
-     */
     private <T> T fetchJson(String url, Class<T> type) {
-        String json = restTemplate.getForObject(url, String.class);
-        if (json == null || json.isBlank()) return null;
         try {
+            HttpRequest req = HttpRequest.newBuilder(URI.create(url))
+                    .header("Accept", "application/json")
+                    .timeout(Duration.ofSeconds(20))
+                    .GET()
+                    .build();
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() / 100 != 2) {
+                throw new IllegalStateException(
+                        "TMDB HTTP " + resp.statusCode() + " for " + url
+                                + (resp.body() != null ? " — " + resp.body() : "")
+                );
+            }
+            String json = resp.body();
+            if (json == null || json.isBlank()) return null;
             return jsonMapper.readValue(json, type);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalStateException(
-                    "Failed to parse TMDB JSON for " + type.getSimpleName() + ": " + e.getMessage(), e
+                    "Failed to fetch/parse TMDB JSON for " + type.getSimpleName() + ": " + e.getMessage(), e
             );
         }
     }
@@ -100,13 +117,25 @@ public class TmdbService {
             ImportJob job
     ) {
 
+        // Fetch the TMDB master genre list once so per-movie genre resolution
+        // doesn't hammer the API and we have names available for any
+        // genre_ids that aren't in our DB yet.
+        TmdbGenreResponseDto tmdbGenreList = getGenres();
+
         List<TmdbMovieDto> collectedMovies =
                 fetchPopularMovies(movieCount);
+
+        Map<Long, TmdbMovieDto> dtoByTmdbId = new HashMap<>();
+        for (TmdbMovieDto dto : collectedMovies) {
+            if (dto.getId() != null) {
+                dtoByTmdbId.put(dto.getId(), dto);
+            }
+        }
 
         List<Movie> savedMovies =
                 saveBasicMovies(collectedMovies);
 
-        enrichMovies(savedMovies, job);
+        enrichMovies(savedMovies, dtoByTmdbId, tmdbGenreList, job);
     }
 
     // -------------------------
@@ -193,12 +222,17 @@ public class TmdbService {
     // -------------------------
     // STEP 2: SAVE MOVIES ONLY
     // -------------------------
-    @Transactional
-    protected List<Movie> saveBasicMovies(List<TmdbMovieDto> dtos) {
+    // Per-movie save so a single bad row (e.g. overview > column length)
+    // doesn't tank the whole batch the way saveAll would.
+    private List<Movie> saveBasicMovies(List<TmdbMovieDto> dtos) {
 
-        List<Movie> movies = new ArrayList<>();
+        List<Movie> saved = new ArrayList<>();
 
         for (TmdbMovieDto dto : dtos) {
+            // Hard skip: adult-flagged movies never enter our DB.
+            if (dto.isAdult()) {
+                continue;
+            }
             try {
                 Movie movie = movieRepository.findByTmdbId(dto.getId())
                         .orElseGet(Movie::new);
@@ -212,21 +246,23 @@ public class TmdbService {
                 movie.setRuntimeMinutes(getMovieRuntime(dto.getId()));
                 movie.setPosterPath(dto.getPosterPath());
                 movie.setBackdropPath(dto.getBackdropPath());
+                movie.setAdult(false);
 
-                movies.add(movie);
+                saved.add(movieRepository.save(movie));
             } catch (Exception e) {
-                // A single bad movie shouldn't fail the whole batch.
                 System.out.println(
                         "Skipping movie tmdbId=" + dto.getId() + ": " + e.getMessage()
                 );
             }
         }
 
-        return movieRepository.saveAll(movies);
+        return saved;
     }
 
     private void enrichMovies(
             List<Movie> movies,
+            Map<Long, TmdbMovieDto> dtoByTmdbId,
+            TmdbGenreResponseDto tmdbGenreList,
             ImportJob job
     ) {
 
@@ -240,16 +276,19 @@ public class TmdbService {
                 if (credits == null)
                     continue;
 
+                TmdbMovieDto sourceDto = dtoByTmdbId.get(movie.getTmdbId());
+                List<Long> genreIds = sourceDto != null ? sourceDto.getGenreIds() : null;
+
                 movie.setActors(importActors(credits));
                 movie.setDirectors(importDirectors(credits));
-                movie.setGenres(resolveGenres());
+                movie.setGenres(resolveGenres(genreIds, tmdbGenreList));
 
                 movieRepository.save(movie);
 
             } catch (Exception e) {
 
                 System.out.println(
-                        "Failed movie: " + movie.getTmdbId()
+                        "Failed movie: " + movie.getTmdbId() + " — " + e.getMessage()
                 );
             }
 
@@ -324,26 +363,41 @@ public class TmdbService {
     // -------------------------
     // GENRES
     // -------------------------
-    private List<Genre> resolveGenres() {
+    // Resolve a movie's specific genre_ids to Genre entities.
+    // - Existing genres are loaded from the DB.
+    // - Unknown genre_ids are persisted on the fly (using the TMDB master
+    //   list for the human-readable name).
+    // - Movie.genres has no cascade, so genres MUST be persisted before
+    //   being attached to the movie or the FK insert into movie_genres fails.
+    private List<Genre> resolveGenres(
+            List<Long> tmdbGenreIds,
+            TmdbGenreResponseDto tmdbGenreList
+    ) {
+        List<Genre> resolved = new ArrayList<>();
+        if (tmdbGenreIds == null || tmdbGenreIds.isEmpty()) return resolved;
 
-        List<Genre> genres = new ArrayList<>();
-
-        List<TmdbGenreDto> tmdbGenres = getGenres().getGenres();
-
-        for (TmdbGenreDto tmdbGenre : tmdbGenres) {
-
-            var genreExists = genreRepository.findByTmdbId(tmdbGenre.getId());
-
-            if(genreExists.isPresent())
-                continue;
-
-            Genre genre = new Genre();
-
-            genre.setTmdbId(tmdbGenre.getId());
-            genre.setTitle(tmdbGenre.getName());
-
-            genres.add(genre);
+        Map<Long, String> nameByTmdbId = new HashMap<>();
+        if (tmdbGenreList != null && tmdbGenreList.getGenres() != null) {
+            for (TmdbGenreDto g : tmdbGenreList.getGenres()) {
+                if (g.getId() != null) {
+                    nameByTmdbId.put(g.getId(), g.getName());
+                }
+            }
         }
-        return genres;
+
+        Set<Long> seen = new HashSet<>();
+        for (Long tmdbGenreId : tmdbGenreIds) {
+            if (tmdbGenreId == null || !seen.add(tmdbGenreId)) continue;
+
+            Genre genre = genreRepository.findByTmdbId(tmdbGenreId)
+                    .orElseGet(() -> {
+                        Genre g = new Genre();
+                        g.setTmdbId(tmdbGenreId);
+                        g.setTitle(nameByTmdbId.getOrDefault(tmdbGenreId, "Unknown"));
+                        return genreRepository.save(g);
+                    });
+            resolved.add(genre);
+        }
+        return resolved;
     }
 }

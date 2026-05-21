@@ -11,5 +11,5 @@ import java.util.Optional;
 
 public interface ActorRepositoryCustom {
     Optional<Actor> findByTmdbId(Long tmdbId);
-    public List<Actor> getActorsByMovie(Long movieId, String movieTitle);
+    List<Actor> getActorsByMovie(Long movieId, String movieTitle);
 }

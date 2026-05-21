@@ -4,6 +4,7 @@ import com.example.movierecommendationapi.entity.ImportJob;
 import com.example.movierecommendationapi.entity.enums.ImportJobStatus;
 import com.example.movierecommendationapi.error.ResourceNotFound;
 import com.example.movierecommendationapi.repository.ImportJobRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -15,13 +16,18 @@ public class TmdbImportService {
 
     private final ImportJobRepository jobRepository;
     private final TmdbService tmdbService;
+    // Self-injection through the Spring proxy so @Async on startImportJob
+    // actually fires when invoked from startImport (this.method() bypasses AOP).
+    private final TmdbImportService self;
 
     public TmdbImportService(
             ImportJobRepository jobRepository,
-            TmdbService tmdbService
+            TmdbService tmdbService,
+            @Lazy TmdbImportService self
     ) {
         this.jobRepository = jobRepository;
         this.tmdbService = tmdbService;
+        this.self = self;
     }
 
     // -------------------------
@@ -47,12 +53,21 @@ public class TmdbImportService {
 
         } catch (Exception e) {
 
+            e.printStackTrace();
             job.setStatus(ImportJobStatus.FAILED);
             job.setErrorMessage(e.getMessage());
             job.setFinishedAt(LocalDateTime.now());
 
         } finally {
-            jobRepository.save(job);
+            try {
+                jobRepository.save(job);
+            } catch (Exception persistError) {
+                // Last resort: don't let a bad errorMessage payload mask the
+                // original failure. Strip the message and try once more.
+                persistError.printStackTrace();
+                job.setErrorMessage("Import failed; details could not be persisted.");
+                jobRepository.save(job);
+            }
         }
     }
 
@@ -66,7 +81,7 @@ public class TmdbImportService {
 
         job = jobRepository.save(job);
 
-        startImportJob(job.getId(), count);
+        self.startImportJob(job.getId(), count);
 
         return job.getId();
     }
